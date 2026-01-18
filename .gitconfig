@@ -1,0 +1,27 @@
+[alias]
+    # Quick commit
+    c = commit -m
+
+    # Amend last commit
+    amend = commit --amend --no-edit
+
+    # Create feature branch
+    feature = "!f() { git checkout -b feature/$1; }; f"
+
+    # Create fix branch
+    fix = "!f() { git checkout -b fix/$1; }; f"
+
+    # Push and create PR
+    pr = "!git push -u origin HEAD && gh pr create --fill"
+
+    # Status short
+    s = status -s
+
+    # Pretty log
+    lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr)%Creset' --abbrev-commit
+
+    # Show recent branches
+    recent = for-each-ref --sort=-committerdate --format='%(committerdate:short) %(refname:short)' refs/heads/
+
+    # Clean merged branches
+    clean-branches = "!git branch --merged | grep -v '\\*\\|main' | xargs -n 1 git branch -d"
