@@ -41,18 +41,18 @@ function App() {
       <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
 
       <main className="flex-1 relative z-10">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
-          {/* Tab panels */}
-          <div
-            id="generate-panel"
-            role="tabpanel"
-            aria-labelledby="generate-tab"
-            hidden={activeTab !== 'generate'}
-            className="animate-slide-up"
-          >
-            {activeTab === 'generate' && <GenerateForm />}
-          </div>
+        {/* Generate panel - wider container for side-by-side layout */}
+        <div
+          id="generate-panel"
+          role="tabpanel"
+          aria-labelledby="generate-tab"
+          hidden={activeTab !== 'generate'}
+          className="animate-fade-in"
+        >
+          {activeTab === 'generate' && <GenerateForm />}
+        </div>
 
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in" hidden={activeTab === 'generate'}>
           <div
             id="encrypt-panel"
             role="tabpanel"
