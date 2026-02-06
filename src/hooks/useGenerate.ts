@@ -109,33 +109,18 @@ export function useGenerate(): UseGenerateReturn {
         ? new Date(Date.now() + expirationYears * 365 * 24 * 60 * 60 * 1000)
         : undefined; // undefined means no expiration
 
-      let keyOptions: openpgp.GenerateKeyOptions;
+      const commonOptions = {
+        userIDs: userIds,
+        passphrase: passphrase || undefined,
+        keyExpirationTime: expirationDate
+          ? Math.floor((expirationDate.getTime() - Date.now()) / 1000)
+          : undefined,
+        format: 'armored' as const,
+      };
 
-      if (algorithm === 'ecc') {
-        keyOptions = {
-          type: 'ecc',
-          curve: curve,
-          userIDs: userIds,
-          passphrase: passphrase || undefined,
-          keyExpirationTime: expirationDate
-            ? Math.floor((expirationDate.getTime() - Date.now()) / 1000)
-            : undefined,
-          format: 'armored',
-        };
-      } else {
-        keyOptions = {
-          type: 'rsa',
-          rsaBits: rsaBits,
-          userIDs: userIds,
-          passphrase: passphrase || undefined,
-          keyExpirationTime: expirationDate
-            ? Math.floor((expirationDate.getTime() - Date.now()) / 1000)
-            : undefined,
-          format: 'armored',
-        };
-      }
-
-      const { privateKey, publicKey } = await openpgp.generateKey(keyOptions);
+      const { privateKey, publicKey } = algorithm === 'ecc'
+        ? await openpgp.generateKey({ ...commonOptions, type: 'ecc', curve: curve as openpgp.EllipticCurveName })
+        : await openpgp.generateKey({ ...commonOptions, type: 'rsa', rsaBits });
 
       // Parse the key to get fingerprint and key ID
       const parsedKey = await openpgp.readKey({ armoredKey: publicKey });
