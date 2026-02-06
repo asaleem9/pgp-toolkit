@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { useGenerate, KeyAlgorithm, ECCCurve, RSABits } from '../hooks/useGenerate';
+import { useGenerate, ECCCurve, RSABits } from '../hooks/useGenerate';
 import { OutputDisplay } from './OutputDisplay';
 import { formatFingerprint } from '../utils/pgp';
 import { TrustBadge } from './TrustBadge';
