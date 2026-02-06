@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Navigation, TabType } from './components/Navigation';
+import { LandingPage } from './components/LandingPage';
 import { GenerateForm } from './components/GenerateForm';
 import { EncryptForm } from './components/EncryptForm';
 import { DecryptForm } from './components/DecryptForm';
@@ -9,7 +10,7 @@ import { KeyInspector } from './components/KeyInspector';
 import { TrustBadge } from './components/TrustBadge';
 
 function App() {
-  const [activeTab, setActiveTab] = useState<TabType>('generate');
+  const [activeTab, setActiveTab] = useState<TabType>('home');
 
   // Warn user before leaving if there's sensitive data
   useEffect(() => {
@@ -41,6 +42,9 @@ function App() {
       <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
 
       <main className="flex-1 relative z-10">
+        {/* Home / Landing page */}
+        {activeTab === 'home' && <LandingPage onNavigate={setActiveTab} />}
+
         {/* Generate panel - wider container for side-by-side layout */}
         <div
           id="generate-panel"
@@ -52,7 +56,7 @@ function App() {
           {activeTab === 'generate' && <GenerateForm />}
         </div>
 
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in" hidden={activeTab === 'generate'}>
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in" hidden={activeTab === 'generate' || activeTab === 'home'}>
           <div
             id="encrypt-panel"
             role="tabpanel"

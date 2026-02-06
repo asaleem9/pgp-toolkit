@@ -1,4 +1,4 @@
-export type TabType = 'encrypt' | 'decrypt' | 'sign' | 'verify' | 'inspect' | 'generate';
+export type TabType = 'home' | 'encrypt' | 'decrypt' | 'sign' | 'verify' | 'inspect' | 'generate';
 
 interface NavigationProps {
   activeTab: TabType;
@@ -6,9 +6,9 @@ interface NavigationProps {
 }
 
 const tabs: { id: TabType; label: string; highlight?: boolean }[] = [
-  { id: 'generate', label: 'Generate', highlight: true },
-  { id: 'encrypt', label: 'Encrypt' },
   { id: 'decrypt', label: 'Decrypt' },
+  { id: 'encrypt', label: 'Encrypt' },
+  { id: 'generate', label: 'Generate' },
   { id: 'sign', label: 'Sign' },
   { id: 'verify', label: 'Verify' },
   { id: 'inspect', label: 'Inspect' },
@@ -19,8 +19,12 @@ export function Navigation({ activeTab, onTabChange }: NavigationProps) {
     <header className="bg-white/80 backdrop-blur-lg border-b border-gray-200/50 sticky top-0 z-50 shadow-sm">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <div className="flex items-center gap-2.5 group">
+          {/* Logo — clickable, navigates to home */}
+          <button
+            className="flex items-center gap-2.5 group"
+            onClick={() => onTabChange('home')}
+            aria-label="Go to home page"
+          >
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-br from-primary-500 to-primary-700 rounded-lg blur-md opacity-30 group-hover:opacity-50 transition-opacity" />
               <svg
@@ -35,7 +39,7 @@ export function Navigation({ activeTab, onTabChange }: NavigationProps) {
               </svg>
             </div>
             <span className="font-semibold text-lg text-primary tracking-tight">PGP Tool</span>
-          </div>
+          </button>
 
           {/* Tab Navigation */}
           <nav className="flex overflow-x-auto gap-1" role="tablist" aria-label="Main navigation">
