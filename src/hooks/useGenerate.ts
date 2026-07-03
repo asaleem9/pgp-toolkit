@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
 import * as openpgp from 'openpgp';
-import { clearString } from '../utils/sanitize';
 
 export type KeyAlgorithm = 'ecc' | 'rsa';
 export type ECCCurve = 'curve25519' | 'p256' | 'p384' | 'p521';
@@ -61,11 +60,6 @@ export function useGenerate(): UseGenerateReturn {
   }, []);
 
   const clearAll = useCallback(() => {
-    clearString(passphrase);
-    clearString(confirmPassphrase);
-    if (generatedKeys) {
-      clearString(generatedKeys.privateKey);
-    }
     setName('');
     setEmail('');
     setPassphraseState('');
@@ -76,7 +70,7 @@ export function useGenerate(): UseGenerateReturn {
     setExpirationYears(2);
     setGeneratedKeys(null);
     setError(null);
-  }, [passphrase, confirmPassphrase, generatedKeys]);
+  }, []);
 
   const generate = useCallback(async () => {
     setError(null);
