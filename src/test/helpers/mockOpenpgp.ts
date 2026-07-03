@@ -108,6 +108,7 @@ export const mockCreateMessage = vi.fn() as Mock<any[], Promise<any>>;
 export const mockCreateCleartextMessage = vi.fn() as Mock<any[], Promise<any>>;
 export const mockReadMessage = vi.fn() as Mock<any[], Promise<any>>;
 export const mockReadCleartextMessage = vi.fn() as Mock<any[], Promise<any>>;
+export const mockReadSignature = vi.fn() as Mock<any[], Promise<any>>;
 export const mockDecryptKey = vi.fn() as Mock<any[], Promise<MockKey>>;
 
 /**
@@ -205,6 +206,13 @@ export function setupDefaultMocks() {
     return createMockMessage('signed', cleartextMessage);
   });
 
+  mockReadSignature.mockImplementation(async ({ armoredSignature }) => {
+    if (!armoredSignature.includes('PGP SIGNATURE')) {
+      throw new Error('Misformed armored text');
+    }
+    return { packets: [{ created: new Date('2024-01-01') }] };
+  });
+
   mockDecryptKey.mockImplementation(async ({ privateKey, passphrase }) => {
     if (!passphrase || passphrase.length === 0) {
       throw new Error('Passphrase required');
@@ -230,6 +238,7 @@ export function resetMocks() {
   mockCreateCleartextMessage.mockReset();
   mockReadMessage.mockReset();
   mockReadCleartextMessage.mockReset();
+  mockReadSignature.mockReset();
   mockDecryptKey.mockReset();
 }
 
@@ -249,6 +258,7 @@ export function mockOpenpgpModule() {
     createCleartextMessage: mockCreateCleartextMessage,
     readMessage: mockReadMessage,
     readCleartextMessage: mockReadCleartextMessage,
+    readSignature: mockReadSignature,
     decryptKey: mockDecryptKey,
   }));
 }

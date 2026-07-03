@@ -1,9 +1,13 @@
 import { useState, useCallback } from 'react';
-import { verifySignature, parsePublicKey, KeyInfo, VerifyResult } from '../utils/pgp';
+import { verifySignature, verifyDetachedSignature, parsePublicKey, KeyInfo, VerifyResult } from '../utils/pgp';
+
+export type VerifyMode = 'inline' | 'detached';
 
 interface UseVerifyState {
   publicKey: string;
   signedMessage: string;
+  originalMessage: string;
+  mode: VerifyMode;
   result: VerifyResult | null;
   keyInfo: KeyInfo | null;
   error: string | null;
@@ -13,6 +17,8 @@ interface UseVerifyState {
 interface UseVerifyReturn extends UseVerifyState {
   setPublicKey: (key: string) => void;
   setSignedMessage: (message: string) => void;
+  setOriginalMessage: (message: string) => void;
+  setMode: (mode: VerifyMode) => void;
   verify: () => Promise<void>;
   clearAll: () => void;
   validateKey: () => Promise<boolean>;
@@ -22,6 +28,8 @@ export function useVerify(): UseVerifyReturn {
   const [state, setState] = useState<UseVerifyState>({
     publicKey: '',
     signedMessage: '',
+    originalMessage: '',
+    mode: 'inline',
     result: null,
     keyInfo: null,
     error: null,
@@ -42,6 +50,24 @@ export function useVerify(): UseVerifyReturn {
     setState(prev => ({
       ...prev,
       signedMessage: message,
+      error: null,
+      result: null,
+    }));
+  }, []);
+
+  const setOriginalMessage = useCallback((message: string) => {
+    setState(prev => ({
+      ...prev,
+      originalMessage: message,
+      error: null,
+      result: null,
+    }));
+  }, []);
+
+  const setMode = useCallback((mode: VerifyMode) => {
+    setState(prev => ({
+      ...prev,
+      mode,
       error: null,
       result: null,
     }));
@@ -87,12 +113,23 @@ export function useVerify(): UseVerifyReturn {
       setState(prev => ({
         ...prev,
         isLoading: false,
-        error: 'Signed message is required',
+        error: state.mode === 'detached' ? 'Signature is required' : 'Signed message is required',
       }));
       return;
     }
 
-    const result = await verifySignature(state.signedMessage, state.publicKey);
+    if (state.mode === 'detached' && !state.originalMessage.trim()) {
+      setState(prev => ({
+        ...prev,
+        isLoading: false,
+        error: 'The original message is required to verify a detached signature',
+      }));
+      return;
+    }
+
+    const result = state.mode === 'detached'
+      ? await verifyDetachedSignature(state.originalMessage, state.signedMessage, state.publicKey)
+      : await verifySignature(state.signedMessage, state.publicKey);
 
     if (result.success) {
       setState(prev => ({
@@ -109,12 +146,14 @@ export function useVerify(): UseVerifyReturn {
         error: result.error ?? 'Verification failed',
       }));
     }
-  }, [state.publicKey, state.signedMessage]);
+  }, [state.publicKey, state.signedMessage, state.originalMessage, state.mode]);
 
   const clearAll = useCallback(() => {
     setState({
       publicKey: '',
       signedMessage: '',
+      originalMessage: '',
+      mode: 'inline',
       result: null,
       keyInfo: null,
       error: null,
@@ -126,6 +165,8 @@ export function useVerify(): UseVerifyReturn {
     ...state,
     setPublicKey,
     setSignedMessage,
+    setOriginalMessage,
+    setMode,
     verify,
     clearAll,
     validateKey,
