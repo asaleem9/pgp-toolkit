@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { inspectKey, DetailedKeyInfo } from '../utils/pgp';
+import { validateMessageSize } from '../utils/validation';
 
 interface UseInspectState {
   keyText: string;
@@ -33,6 +34,12 @@ export function useInspect(): UseInspectReturn {
   const inspect = useCallback(async () => {
     if (!state.keyText.trim()) {
       setState(prev => ({ ...prev, error: 'Please paste a PGP key to inspect' }));
+      return;
+    }
+
+    const sizeValidation = validateMessageSize(state.keyText);
+    if (!sizeValidation.valid) {
+      setState(prev => ({ ...prev, error: sizeValidation.error ?? null }));
       return;
     }
 

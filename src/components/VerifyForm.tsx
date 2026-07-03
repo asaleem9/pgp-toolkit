@@ -7,12 +7,17 @@ export function VerifyForm() {
   const {
     publicKey,
     signedMessage,
+    originalMessage,
+    mode,
     result,
     keyInfo,
     error,
+    errorField,
     isLoading,
     setPublicKey,
     setSignedMessage,
+    setOriginalMessage,
+    setMode,
     verify,
     clearAll,
     validateKey,
@@ -72,34 +77,111 @@ export function VerifyForm() {
             onChange={setPublicKey}
             onBlur={handleKeyBlur}
             keyInfo={keyInfo}
-            error={!signedMessage && error && error.includes('public key') ? error : null}
+            error={errorField === 'publicKey' ? error : null}
             keyType="public"
           />
         </div>
 
-        {/* Step 2: Signed Message */}
+        {/* Step 2: Signature Type */}
+        <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+          <p className="text-sm font-medium text-gray-700 mb-3">What are you verifying?</p>
+          <div className="space-y-2">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="radio"
+                name="verifyMode"
+                checked={mode === 'inline'}
+                onChange={() => setMode('inline')}
+                className="mt-1 text-primary focus:ring-primary"
+              />
+              <div>
+                <span className="text-sm font-medium text-gray-900">Signed message</span>
+                <p className="text-xs text-secondary">
+                  A clear-signed document with the message and signature combined
+                </p>
+              </div>
+            </label>
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="radio"
+                name="verifyMode"
+                checked={mode === 'detached'}
+                onChange={() => setMode('detached')}
+                className="mt-1 text-primary focus:ring-primary"
+              />
+              <div>
+                <span className="text-sm font-medium text-gray-900">Detached signature</span>
+                <p className="text-xs text-secondary">
+                  A separate signature file plus the original message it signs
+                </p>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        {/* Step 3 (detached only): Original Message */}
+        {mode === 'detached' && (
+          <div className="mb-6">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 text-white text-sm font-semibold shadow-md">
+                3
+              </span>
+              <span className="text-sm font-semibold text-gray-900">Paste Original Message</span>
+            </div>
+            <DropZone onDrop={setOriginalMessage} hint="Drop original message file">
+              <textarea
+                id="original-message-input"
+                className={`w-full h-32 px-3 py-2 font-mono text-sm border rounded-lg resize-none focus:outline-none focus:ring-2 transition-colors ${
+                  errorField === 'originalMessage'
+                    ? 'border-error focus:ring-error/20 focus:border-error'
+                    : 'border-gray-300 focus:ring-primary/20 focus:border-primary'
+                }`}
+                placeholder="The exact message that was signed..."
+                value={originalMessage}
+                onChange={(e) => setOriginalMessage(e.target.value)}
+                spellCheck={false}
+              />
+            </DropZone>
+            {errorField === 'originalMessage' && error && (
+              <p className="mt-1 text-sm text-error" role="alert">
+                {error}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Signed Message / Signature */}
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-4">
             <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 text-white text-sm font-semibold shadow-md">
-              2
+              {mode === 'detached' ? 4 : 3}
             </span>
-            <span className="text-sm font-semibold text-gray-900">Paste Signed Message</span>
+            <span className="text-sm font-semibold text-gray-900">
+              {mode === 'detached' ? 'Paste Signature' : 'Paste Signed Message'}
+            </span>
           </div>
-          <DropZone onDrop={setSignedMessage} hint="Drop signed message file">
+          <DropZone
+            onDrop={setSignedMessage}
+            hint={mode === 'detached' ? 'Drop signature file' : 'Drop signed message file'}
+          >
             <textarea
               id="signed-message-input"
               className={`w-full h-40 px-3 py-2 font-mono text-sm border rounded-lg resize-none focus:outline-none focus:ring-2 transition-colors ${
-                error && error.includes('message')
+                errorField === 'signature'
                   ? 'border-error focus:ring-error/20 focus:border-error'
                   : 'border-gray-300 focus:ring-primary/20 focus:border-primary'
               }`}
-              placeholder="-----BEGIN PGP SIGNED MESSAGE-----&#10;Hash: SHA256&#10;&#10;Your signed message here...&#10;-----BEGIN PGP SIGNATURE-----&#10;...&#10;-----END PGP SIGNATURE-----"
+              placeholder={
+                mode === 'detached'
+                  ? '-----BEGIN PGP SIGNATURE-----\n...\n-----END PGP SIGNATURE-----'
+                  : '-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA256\n\nYour signed message here...\n-----BEGIN PGP SIGNATURE-----\n...\n-----END PGP SIGNATURE-----'
+              }
               value={signedMessage}
               onChange={(e) => setSignedMessage(e.target.value)}
               spellCheck={false}
             />
           </DropZone>
-          {error && error.includes('message') && (
+          {errorField === 'signature' && error && (
             <p className="mt-1 text-sm text-error" role="alert">
               {error}
             </p>
@@ -107,7 +189,7 @@ export function VerifyForm() {
         </div>
 
         {/* General error */}
-        {error && !error.includes('public key') && !error.includes('message') && (
+        {errorField === 'general' && error && (
           <div className="mb-4 p-3 bg-error/10 border border-error/20 rounded-lg">
             <p className="text-sm text-error" role="alert">
               {error}
@@ -211,6 +293,14 @@ export function VerifyForm() {
                       Signed On
                     </dt>
                     <dd className="mt-1 text-gray-900">{formatDate(result.signedAt)}</dd>
+                  </div>
+                )}
+                {result.signedByKeyId && (
+                  <div>
+                    <dt className="text-xs font-medium text-secondary uppercase tracking-wide">
+                      Signing Key ID
+                    </dt>
+                    <dd className="mt-1 text-gray-900 font-mono">0x{result.signedByKeyId.slice(-16)}</dd>
                   </div>
                 )}
               </div>

@@ -108,6 +108,7 @@ export const mockCreateMessage = vi.fn() as Mock<any[], Promise<any>>;
 export const mockCreateCleartextMessage = vi.fn() as Mock<any[], Promise<any>>;
 export const mockReadMessage = vi.fn() as Mock<any[], Promise<any>>;
 export const mockReadCleartextMessage = vi.fn() as Mock<any[], Promise<any>>;
+export const mockReadSignature = vi.fn() as Mock<any[], Promise<any>>;
 export const mockDecryptKey = vi.fn() as Mock<any[], Promise<MockKey>>;
 
 /**
@@ -131,7 +132,7 @@ export function setupDefaultMocks() {
   });
 
   // Default successful encryption
-  mockEncrypt.mockImplementation(async ({ message, encryptionKeys }) => {
+  mockEncrypt.mockImplementation(async ({ encryptionKeys }) => {
     if (!encryptionKeys || encryptionKeys.length === 0) {
       throw new Error('No encryption keys provided');
     }
@@ -139,7 +140,7 @@ export function setupDefaultMocks() {
   });
 
   // Default successful decryption
-  mockDecrypt.mockImplementation(async ({ message, decryptionKeys }) => {
+  mockDecrypt.mockImplementation(async ({ decryptionKeys }) => {
     if (!decryptionKeys) {
       throw new Error('No decryption key provided');
     }
@@ -151,7 +152,7 @@ export function setupDefaultMocks() {
   });
 
   // Default successful signing
-  mockSign.mockImplementation(async ({ message, signingKeys, format, detached }) => {
+  mockSign.mockImplementation(async ({ signingKeys, format, detached }) => {
     if (!signingKeys) {
       throw new Error('No signing key provided');
     }
@@ -166,7 +167,7 @@ export function setupDefaultMocks() {
   });
 
   // Default successful verification
-  mockVerify.mockImplementation(async ({ message, verificationKeys }) => {
+  mockVerify.mockImplementation(async ({ verificationKeys }) => {
     if (!verificationKeys || verificationKeys.length === 0) {
       throw new Error('No verification key provided');
     }
@@ -205,7 +206,14 @@ export function setupDefaultMocks() {
     return createMockMessage('signed', cleartextMessage);
   });
 
-  mockDecryptKey.mockImplementation(async ({ privateKey, passphrase }) => {
+  mockReadSignature.mockImplementation(async ({ armoredSignature }) => {
+    if (!armoredSignature.includes('PGP SIGNATURE')) {
+      throw new Error('Misformed armored text');
+    }
+    return { packets: [{ created: new Date('2024-01-01') }] };
+  });
+
+  mockDecryptKey.mockImplementation(async ({ passphrase }) => {
     if (!passphrase || passphrase.length === 0) {
       throw new Error('Passphrase required');
     }
@@ -230,6 +238,7 @@ export function resetMocks() {
   mockCreateCleartextMessage.mockReset();
   mockReadMessage.mockReset();
   mockReadCleartextMessage.mockReset();
+  mockReadSignature.mockReset();
   mockDecryptKey.mockReset();
 }
 
@@ -249,6 +258,7 @@ export function mockOpenpgpModule() {
     createCleartextMessage: mockCreateCleartextMessage,
     readMessage: mockReadMessage,
     readCleartextMessage: mockReadCleartextMessage,
+    readSignature: mockReadSignature,
     decryptKey: mockDecryptKey,
   }));
 }

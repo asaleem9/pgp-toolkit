@@ -1,8 +1,11 @@
 import { useState, useCallback, DragEvent } from 'react';
+import { MAX_MESSAGE_SIZE } from '../utils/validation';
 
 interface UseDropZoneOptions {
   onDrop: (content: string) => void;
+  onError?: (message: string) => void;
   acceptedExtensions?: string[];
+  maxSize?: number;
 }
 
 interface UseDropZoneReturn {
@@ -17,7 +20,9 @@ const DEFAULT_EXTENSIONS = ['.asc', '.gpg', '.key', '.pgp', '.txt'];
 
 export function useDropZone({
   onDrop,
+  onError,
   acceptedExtensions = DEFAULT_EXTENSIONS,
+  maxSize = MAX_MESSAGE_SIZE,
 }: UseDropZoneOptions): UseDropZoneReturn {
   const [isDragging, setIsDragging] = useState(false);
   const [, setDragCounter] = useState(0);
@@ -66,6 +71,16 @@ export function useDropZone({
 
       const file = files[0];
       if (!isValidFile(file)) {
+        onError?.(
+          `This file type isn't supported. Accepted types: ${acceptedExtensions.join(', ')}`
+        );
+        return;
+      }
+
+      if (file.size > maxSize) {
+        onError?.(
+          `File is too large (${(file.size / 1024 / 1024).toFixed(2)}MB). Maximum size is ${maxSize / 1024 / 1024}MB.`
+        );
         return;
       }
 
@@ -76,9 +91,12 @@ export function useDropZone({
           onDrop(content);
         }
       };
+      reader.onerror = () => {
+        onError?.('Could not read the dropped file.');
+      };
       reader.readAsText(file);
     },
-    [isValidFile, onDrop]
+    [isValidFile, onDrop, onError, acceptedExtensions, maxSize]
   );
 
   return {

@@ -12,6 +12,7 @@ export function DecryptForm() {
     decryptedOutput,
     keyInfo,
     error,
+    errorField,
     isLoading,
     needsPassphrase,
     setPrivateKey,
@@ -64,7 +65,7 @@ export function DecryptForm() {
             onChange={setPrivateKey}
             onBlur={handleKeyBlur}
             keyInfo={keyInfo}
-            error={error && error.includes('private key') ? error : null}
+            error={errorField === 'privateKey' ? error : null}
             keyType="private"
           />
         </div>
@@ -85,16 +86,19 @@ export function DecryptForm() {
                 type="password"
                 id="passphrase"
                 className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 transition-colors ${
-                  error && error.includes('passphrase')
+                  errorField === 'passphrase'
                     ? 'border-error focus:ring-error/20 focus:border-error'
                     : 'border-gray-300 focus:ring-primary/20 focus:border-primary'
                 }`}
                 placeholder="Enter your passphrase"
                 value={passphrase}
                 onChange={(e) => setPassphrase(e.target.value)}
-                autoComplete="current-password"
+                autoComplete="off"
+                data-1p-ignore="true"
+                data-lpignore="true"
+                data-form-type="other"
               />
-              {error && error.includes('passphrase') && (
+              {errorField === 'passphrase' && error && (
                 <p className="text-sm text-error" role="alert">
                   {error}
                 </p>
@@ -117,23 +121,20 @@ export function DecryptForm() {
             placeholder="-----BEGIN PGP MESSAGE-----&#10;&#10;Paste the encrypted message here...&#10;&#10;-----END PGP MESSAGE-----"
             value={encryptedMessage}
             onChange={setEncryptedMessage}
-            error={error && error.includes('PGP message') ? error : null}
+            error={errorField === 'message' ? error : null}
             rows={8}
             allowFileUpload
           />
         </div>
 
         {/* General error */}
-        {error &&
-          !error.includes('private key') &&
-          !error.includes('passphrase') &&
-          !error.includes('PGP message') && (
-            <div className="mb-4 p-3 bg-error/10 border border-error/20 rounded-lg">
-              <p className="text-sm text-error" role="alert">
-                {error}
-              </p>
-            </div>
-          )}
+        {errorField === 'general' && error && (
+          <div className="mb-4 p-3 bg-error/10 border border-error/20 rounded-lg">
+            <p className="text-sm text-error" role="alert">
+              {error}
+            </p>
+          </div>
+        )}
 
         {/* Decrypt button */}
         <button

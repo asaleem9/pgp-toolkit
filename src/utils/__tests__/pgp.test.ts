@@ -11,6 +11,7 @@ import {
   decryptMessage,
   signMessage,
   verifySignature,
+  verifyDetachedSignature,
   formatFingerprint,
   inspectKey,
   getExpiryStatus,
@@ -28,6 +29,7 @@ import {
   mockCreateCleartextMessage,
   mockReadMessage,
   mockReadCleartextMessage,
+  mockReadSignature,
   createMockKey,
   setupDefaultMocks,
   resetMocks,
@@ -49,6 +51,7 @@ vi.mock('openpgp', async () => {
     createCleartextMessage: mockHelpers.mockCreateCleartextMessage,
     readMessage: mockHelpers.mockReadMessage,
     readCleartextMessage: mockHelpers.mockReadCleartextMessage,
+    readSignature: mockHelpers.mockReadSignature,
     decryptKey: mockHelpers.mockDecryptKey,
   };
 });
@@ -855,5 +858,157 @@ describe('inspectKey', () => {
     const result = await inspectKey('INVALID KEY');
 
     expect(result).toBeNull();
+  });
+});
+
+describe('verifySignature edge cases', () => {
+  beforeEach(() => {
+    setupDefaultMocks();
+  });
+
+  afterEach(() => {
+    resetMocks();
+  });
+
+  it('should return a friendly error for a message with no signatures', async () => {
+    mockVerify.mockResolvedValue({ signatures: [], data: 'plain text' });
+
+    const result = await verifySignature(TEST_MESSAGES.signedByAlice, TEST_KEYS.alice.publicKey);
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('does not contain a signature');
+  });
+
+  it('should accept a message when a later signature verifies', async () => {
+    mockVerify.mockResolvedValue({
+      signatures: [
+        {
+          keyID: { toHex: () => 'aaaa000011112222' },
+          verified: Promise.reject(new Error('unknown key')),
+          signature: { packets: [] },
+        },
+        {
+          keyID: { toHex: () => 'bbbb333344445555' },
+          verified: Promise.resolve(true),
+          signature: { packets: [{ created: new Date('2024-02-02') }] },
+        },
+      ],
+      data: 'multi-signed content',
+    });
+
+    const result = await verifySignature(TEST_MESSAGES.signedByAlice, TEST_KEYS.alice.publicKey);
+
+    expect(result.success).toBe(true);
+    expect(result.valid).toBe(true);
+    expect(result.signedByKeyId).toBe('BBBB333344445555');
+    expect(result.message).toBe('multi-signed content');
+  });
+
+  it('should report the signing key ID on success', async () => {
+    const result = await verifySignature(TEST_MESSAGES.signedByAlice, TEST_KEYS.alice.publicKey);
+
+    expect(result.valid).toBe(true);
+    expect(result.signedByKeyId).toBe('0123456789ABCDEF');
+  });
+});
+
+describe('verifyDetachedSignature', () => {
+  beforeEach(() => {
+    setupDefaultMocks();
+  });
+
+  afterEach(() => {
+    resetMocks();
+  });
+
+  const armoredSignature = '-----BEGIN PGP SIGNATURE-----\nsig\n-----END PGP SIGNATURE-----';
+
+  it('should verify a detached signature against the original message', async () => {
+    const result = await verifyDetachedSignature(
+      'original message',
+      armoredSignature,
+      TEST_KEYS.alice.publicKey
+    );
+
+    expect(result.success).toBe(true);
+    expect(result.valid).toBe(true);
+    expect(result.message).toBe('original message');
+    expect(mockReadSignature).toHaveBeenCalledWith({ armoredSignature });
+  });
+
+  it('should reject text that is not an armored signature', async () => {
+    const result = await verifyDetachedSignature(
+      'original message',
+      'not a signature at all',
+      TEST_KEYS.alice.publicKey
+    );
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('valid PGP signature');
+  });
+
+  it('should report an invalid result when the signature does not match', async () => {
+    mockVerify.mockResolvedValue({
+      signatures: [
+        {
+          keyID: { toHex: () => '0123456789ABCDEF' },
+          verified: Promise.reject(new Error('signature mismatch')),
+          signature: { packets: [] },
+        },
+      ],
+      data: 'original message',
+    });
+
+    const result = await verifyDetachedSignature(
+      'original message',
+      armoredSignature,
+      TEST_KEYS.alice.publicKey
+    );
+
+    expect(result.success).toBe(true);
+    expect(result.valid).toBe(false);
+  });
+});
+
+describe('getExpiryStatus same-day boundary', () => {
+  it('should report a key that expired earlier today as expired', () => {
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+
+    expect(getExpiryStatus(oneHourAgo)).toBe('expired');
+  });
+
+  it('should report a key expiring later today as expiring-week', () => {
+    const inOneHour = new Date(Date.now() + 60 * 60 * 1000);
+
+    expect(getExpiryStatus(inOneHour)).toBe('expiring-week');
+  });
+});
+
+describe('decryptMessage error differentiation', () => {
+  beforeEach(() => {
+    setupDefaultMocks();
+  });
+
+  afterEach(() => {
+    resetMocks();
+  });
+
+  it('should surface integrity failures distinctly', async () => {
+    mockDecrypt.mockRejectedValue(new Error('Modification detected.'));
+
+    const result = await decryptMessage(TEST_MESSAGES.encryptedToAlice, TEST_KEYS.alice.privateKey);
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('integrity check');
+  });
+
+  it('should return a passphrase code when the key is locked', async () => {
+    const result = await decryptMessage(
+      TEST_MESSAGES.encryptedToAlice,
+      TEST_KEYS.bob.privateKey.replace('PRIVATE KEY', 'ENCRYPTED PRIVATE KEY')
+    );
+
+    expect(result.success).toBe(false);
+    expect(result.code).toBe('NEEDS_PASSPHRASE');
   });
 });

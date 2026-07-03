@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
 import * as openpgp from 'openpgp';
-import { clearString } from '../utils/sanitize';
 
 export type KeyAlgorithm = 'ecc' | 'rsa';
 export type ECCCurve = 'curve25519' | 'p256' | 'p384' | 'p521';
@@ -11,6 +10,7 @@ interface GeneratedKeys {
   privateKey: string;
   fingerprint: string;
   keyId: string;
+  isProtected: boolean;
 }
 
 interface UseGenerateReturn {
@@ -40,7 +40,7 @@ interface UseGenerateReturn {
 export function useGenerate(): UseGenerateReturn {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [passphrase, setPassphrase] = useState('');
+  const [passphrase, setPassphraseState] = useState('');
   const [confirmPassphrase, setConfirmPassphrase] = useState('');
   const [algorithm, setAlgorithm] = useState<KeyAlgorithm>('ecc');
   const [curve, setCurve] = useState<ECCCurve>('curve25519');
@@ -50,15 +50,19 @@ export function useGenerate(): UseGenerateReturn {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const clearAll = useCallback(() => {
-    clearString(passphrase);
-    clearString(confirmPassphrase);
-    if (generatedKeys) {
-      clearString(generatedKeys.privateKey);
+  // Clearing the passphrase hides the confirm field, so drop its stale value
+  // too - otherwise the passphrase checks silently stop applying
+  const setPassphrase = useCallback((value: string) => {
+    setPassphraseState(value);
+    if (!value) {
+      setConfirmPassphrase('');
     }
+  }, []);
+
+  const clearAll = useCallback(() => {
     setName('');
     setEmail('');
-    setPassphrase('');
+    setPassphraseState('');
     setConfirmPassphrase('');
     setAlgorithm('ecc');
     setCurve('curve25519');
@@ -66,7 +70,7 @@ export function useGenerate(): UseGenerateReturn {
     setExpirationYears(2);
     setGeneratedKeys(null);
     setError(null);
-  }, [passphrase, confirmPassphrase, generatedKeys]);
+  }, []);
 
   const generate = useCallback(async () => {
     setError(null);
@@ -104,17 +108,19 @@ export function useGenerate(): UseGenerateReturn {
     try {
       const userIds = [{ name: name.trim(), email: email.trim() }];
 
-      // Calculate expiration date
-      const expirationDate = expirationYears > 0
-        ? new Date(Date.now() + expirationYears * 365 * 24 * 60 * 60 * 1000)
-        : undefined; // undefined means no expiration
+      // Expiration is expressed in seconds from now; use calendar years so
+      // "2 years" lands on the same date instead of drifting across leap years
+      let keyExpirationTime: number | undefined;
+      if (expirationYears > 0) {
+        const expiry = new Date();
+        expiry.setFullYear(expiry.getFullYear() + expirationYears);
+        keyExpirationTime = Math.floor((expiry.getTime() - Date.now()) / 1000);
+      }
 
       const commonOptions = {
         userIDs: userIds,
         passphrase: passphrase || undefined,
-        keyExpirationTime: expirationDate
-          ? Math.floor((expirationDate.getTime() - Date.now()) / 1000)
-          : undefined,
+        keyExpirationTime,
         format: 'armored' as const,
       };
 
@@ -132,6 +138,7 @@ export function useGenerate(): UseGenerateReturn {
         privateKey,
         fingerprint,
         keyId,
+        isProtected: passphrase.length > 0,
       });
     } catch (err) {
       console.error('Key generation error:', err);

@@ -10,7 +10,6 @@ import { TEST_KEYS, TEST_MESSAGES } from '../../test/fixtures/keys';
 import {
   mockReadKey,
   mockEncrypt,
-  createMockKey,
   setupDefaultMocks,
   resetMocks,
 } from '../../test/helpers/mockOpenpgp';
@@ -29,6 +28,7 @@ vi.mock('openpgp', async () => {
     createCleartextMessage: mockHelpers.mockCreateCleartextMessage,
     readMessage: mockHelpers.mockReadMessage,
     readCleartextMessage: mockHelpers.mockReadCleartextMessage,
+    readSignature: mockHelpers.mockReadSignature,
     decryptKey: mockHelpers.mockDecryptKey,
   };
 });

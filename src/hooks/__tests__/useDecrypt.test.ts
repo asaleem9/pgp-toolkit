@@ -11,7 +11,6 @@ import {
   mockReadPrivateKey,
   mockDecrypt,
   mockDecryptKey,
-  mockReadMessage,
   createMockKey,
   setupDefaultMocks,
   resetMocks,
@@ -31,6 +30,7 @@ vi.mock('openpgp', async () => {
     createCleartextMessage: mockHelpers.mockCreateCleartextMessage,
     readMessage: mockHelpers.mockReadMessage,
     readCleartextMessage: mockHelpers.mockReadCleartextMessage,
+    readSignature: mockHelpers.mockReadSignature,
     decryptKey: mockHelpers.mockDecryptKey,
   };
 });

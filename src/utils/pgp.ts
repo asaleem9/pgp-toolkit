@@ -16,22 +16,27 @@ export interface EncryptResult {
   error?: string;
 }
 
+export type PassphraseErrorCode = 'NEEDS_PASSPHRASE' | 'WRONG_PASSPHRASE';
+
 export interface DecryptResult {
   success: boolean;
   data?: string;
   error?: string;
+  code?: PassphraseErrorCode;
 }
 
 export interface SignResult {
   success: boolean;
   data?: string;
   error?: string;
+  code?: PassphraseErrorCode;
 }
 
 export interface VerifyResult {
   success: boolean;
   valid?: boolean;
   signedBy?: string;
+  signedByKeyId?: string;
   signedAt?: Date;
   message?: string;
   error?: string;
@@ -139,6 +144,7 @@ export async function decryptMessage(
         return {
           success: false,
           error: 'This private key is protected by a passphrase. Please enter your passphrase.',
+          code: 'NEEDS_PASSPHRASE',
         };
       }
 
@@ -151,6 +157,7 @@ export async function decryptMessage(
         return {
           success: false,
           error: 'Incorrect passphrase. Please try again.',
+          code: 'WRONG_PASSPHRASE',
         };
       }
     }
@@ -167,13 +174,20 @@ export async function decryptMessage(
       data: decrypted as string,
     };
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Decryption failed';
+    const errorMessage = error instanceof Error ? error.message : '';
 
     // Provide user-friendly error messages
-    if (errorMessage.includes('Session key decryption failed')) {
+    if (errorMessage.includes('Modification detected')) {
       return {
         success: false,
-        error: 'Could not decrypt this message. Make sure you\'re using the correct private key.',
+        error: 'This message failed its integrity check. It may have been tampered with or corrupted in transit.',
+      };
+    }
+
+    if (errorMessage.includes('Misformed armored text') || errorMessage.includes('parsing')) {
+      return {
+        success: false,
+        error: "This doesn't appear to be a valid PGP message. Make sure you copied the entire encrypted block.",
       };
     }
 
@@ -202,6 +216,7 @@ export async function signMessage(
         return {
           success: false,
           error: 'This private key is protected by a passphrase. Please enter your passphrase.',
+          code: 'NEEDS_PASSPHRASE',
         };
       }
 
@@ -214,6 +229,7 @@ export async function signMessage(
         return {
           success: false,
           error: 'Incorrect passphrase. Please try again.',
+          code: 'WRONG_PASSPHRASE',
         };
       }
     }
@@ -252,6 +268,55 @@ export async function signMessage(
   }
 }
 
+interface VerificationSignature {
+  verified: Promise<boolean> | boolean;
+  signature: Promise<{ packets?: Array<{ created?: Date | null }> }> | { packets?: Array<{ created?: Date | null }> };
+  keyID?: { toHex: () => string };
+}
+
+/**
+ * Resolves an openpgp.verify() result into a VerifyResult, accepting the
+ * message if any of its signatures checks out against the provided key.
+ */
+async function resolveVerification(
+  verificationResult: { signatures: VerificationSignature[]; data: unknown },
+  publicKey: openpgp.Key
+): Promise<VerifyResult> {
+  const { signatures, data } = verificationResult;
+
+  if (!signatures || signatures.length === 0) {
+    return {
+      success: false,
+      error: 'This message does not contain a signature. Make sure you pasted a signed message, not a plain or encrypted one.',
+    };
+  }
+
+  for (const { verified, signature, keyID } of signatures) {
+    try {
+      await verified;
+      const signaturePacket = await signature;
+      const signedAt = signaturePacket?.packets?.[0]?.created;
+
+      return {
+        success: true,
+        valid: true,
+        signedBy: publicKey.getUserIDs()[0] || 'Unknown',
+        signedByKeyId: keyID ? keyID.toHex().toUpperCase() : undefined,
+        signedAt: signedAt instanceof Date ? signedAt : undefined,
+        message: typeof data === 'string' ? data : undefined,
+      };
+    } catch {
+      // This signature didn't verify against the key; try the next one
+    }
+  }
+
+  return {
+    success: true,
+    valid: false,
+    error: 'Signature verification failed. The message may have been tampered with or signed by a different key.',
+  };
+}
+
 /**
  * Verifies a signed message using a public key
  */
@@ -276,27 +341,46 @@ export async function verifySignature(
       verificationKeys: publicKey,
     });
 
-    const { verified, signature } = verificationResult.signatures[0];
+    return await resolveVerification(verificationResult, publicKey);
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Could not verify the signature.',
+    };
+  }
+}
 
+/**
+ * Verifies a detached signature against the original message
+ */
+export async function verifyDetachedSignature(
+  originalMessage: string,
+  armoredSignature: string,
+  armoredPublicKey: string
+): Promise<VerifyResult> {
+  try {
+    const publicKey = await openpgp.readKey({ armoredKey: armoredPublicKey });
+
+    let signature;
     try {
-      await verified;
-      const signaturePacket = await signature;
-      const signedAt = signaturePacket?.packets?.[0]?.created;
-
-      return {
-        success: true,
-        valid: true,
-        signedBy: publicKey.getUserIDs()[0] || 'Unknown',
-        signedAt: signedAt instanceof Date ? signedAt : undefined,
-        message: typeof verificationResult.data === 'string' ? verificationResult.data : undefined,
-      };
+      signature = await openpgp.readSignature({ armoredSignature });
     } catch {
       return {
-        success: true,
-        valid: false,
-        error: 'Signature verification failed. The message may have been tampered with or signed by a different key.',
+        success: false,
+        error: "This doesn't appear to be a valid PGP signature. It should start with '-----BEGIN PGP SIGNATURE-----'",
       };
     }
+
+    const message = await openpgp.createMessage({ text: originalMessage });
+
+    const verificationResult = await openpgp.verify({
+      message,
+      signature,
+      verificationKeys: publicKey,
+    });
+
+    const result = await resolveVerification(verificationResult, publicKey);
+    return result.valid ? { ...result, message: originalMessage } : result;
   } catch (error) {
     return {
       success: false,
@@ -344,6 +428,62 @@ export interface DetailedKeyInfo {
 }
 
 /**
+ * Extracts the key flags from the most recent signature that declares them
+ */
+function latestKeyFlags(
+  signatures: Array<{ created?: Date | null; keyFlags?: Uint8Array | null }> | undefined
+): Uint8Array | null {
+  if (!signatures) {
+    return null;
+  }
+
+  const withFlags = signatures.filter(sig => sig.keyFlags && sig.keyFlags.length > 0);
+  if (withFlags.length === 0) {
+    return null;
+  }
+
+  withFlags.sort((a, b) => (a.created?.getTime() ?? 0) - (b.created?.getTime() ?? 0));
+  return withFlags[withFlags.length - 1].keyFlags ?? null;
+}
+
+/**
+ * Maps RFC 4880 key flag bits to capability names
+ */
+function capsFromKeyFlags(flags: Uint8Array | null): string[] | null {
+  if (!flags || flags.length === 0) {
+    return null;
+  }
+
+  const caps: string[] = [];
+  if (flags[0] & 0x01) caps.push('certify');
+  if (flags[0] & 0x02) caps.push('sign');
+  if (flags[0] & 0x0c) caps.push('encrypt'); // communications and/or storage
+  if (flags[0] & 0x20) caps.push('authenticate');
+  return caps;
+}
+
+/**
+ * Fallback capability guess for old keys that don't declare key flags
+ */
+function capsFromAlgorithm(algorithm: string): string[] {
+  const algo = algorithm.toLowerCase();
+  const caps: string[] = [];
+  if (algo.includes('ecdh') || algo.includes('elgamal')) {
+    caps.push('encrypt');
+  }
+  if (algo.includes('eddsa') || algo.includes('ecdsa') || algo.includes('dsa')) {
+    caps.push('sign');
+  }
+  if (algo.includes('rsa')) {
+    caps.push('encrypt', 'sign');
+  }
+  if (caps.length === 0) {
+    caps.push('encrypt');
+  }
+  return caps;
+}
+
+/**
  * Inspects a key and returns detailed information
  */
 export async function inspectKey(armoredKey: string): Promise<DetailedKeyInfo | null> {
@@ -367,24 +507,9 @@ export async function inspectKey(armoredKey: string): Promise<DetailedKeyInfo | 
       const subkeyExpTime = await subkey.getExpirationTime();
       const subkeyExpDate = subkeyExpTime instanceof Date ? subkeyExpTime : null;
 
-      // Determine capabilities based on algorithm
-      // Encryption algorithms: ECDH, ElGamal
-      // Signing algorithms: EdDSA, ECDSA, RSA, DSA
-      const algo = subkeyAlgoInfo.algorithm.toLowerCase();
-      const caps: string[] = [];
-      if (algo.includes('ecdh') || algo.includes('elgamal')) {
-        caps.push('encrypt');
-      }
-      if (algo.includes('eddsa') || algo.includes('ecdsa') || algo.includes('dsa')) {
-        caps.push('sign');
-      }
-      if (algo.includes('rsa')) {
-        // RSA can do both
-        caps.push('encrypt', 'sign');
-      }
-      if (caps.length === 0) {
-        caps.push('encrypt'); // Default assumption
-      }
+      const caps =
+        capsFromKeyFlags(latestKeyFlags(subkey.bindingSignatures)) ??
+        capsFromAlgorithm(subkeyAlgoInfo.algorithm);
 
       subkeys.push({
         keyId: subkey.getKeyID().toHex().toUpperCase(),
@@ -395,23 +520,29 @@ export async function inspectKey(armoredKey: string): Promise<DetailedKeyInfo | 
       });
     }
 
-    // Get primary key capabilities
+    // Primary key capabilities from the key flags on its self-certifications
+    const selfCertifications = (key.users ?? []).flatMap(user => user.selfCertifications ?? []);
+    const primaryCaps = capsFromKeyFlags(latestKeyFlags(selfCertifications));
+
     const capabilities = {
-      certify: true, // Primary keys can always certify
-      sign: false,
-      encrypt: false,
-      authenticate: false,
+      certify: primaryCaps ? primaryCaps.includes('certify') : true,
+      sign: primaryCaps ? primaryCaps.includes('sign') : false,
+      encrypt: primaryCaps ? primaryCaps.includes('encrypt') : false,
+      authenticate: primaryCaps ? primaryCaps.includes('authenticate') : false,
     };
 
-    try {
-      await key.getSigningKey();
-      capabilities.sign = true;
-    } catch { /* ignore */ }
+    // Older keys may omit key flags entirely; fall back to what the key can do
+    if (!primaryCaps) {
+      try {
+        await key.getSigningKey(key.getKeyID());
+        capabilities.sign = true;
+      } catch { /* ignore */ }
 
-    try {
-      await key.getEncryptionKey();
-      capabilities.encrypt = true;
-    } catch { /* ignore */ }
+      try {
+        await key.getEncryptionKey(key.getKeyID());
+        capabilities.encrypt = true;
+      } catch { /* ignore */ }
+    }
 
     return {
       type: isPrivate ? 'private' : 'public',
@@ -442,11 +573,16 @@ export function getExpiryStatus(expirationDate: Date | null): ExpiryStatus {
   }
 
   const now = new Date();
+
+  // Compare timestamps directly: rounding days up would misreport a key that
+  // expired earlier today as "expires in 0 days"
+  if (expirationDate.getTime() <= now.getTime()) {
+    return 'expired';
+  }
+
   const daysUntilExpiry = Math.ceil((expirationDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
-  if (daysUntilExpiry < 0) {
-    return 'expired';
-  } else if (daysUntilExpiry <= 7) {
+  if (daysUntilExpiry <= 7) {
     return 'expiring-week';
   } else if (daysUntilExpiry <= 30) {
     return 'expiring-soon';

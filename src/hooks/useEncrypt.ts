@@ -2,6 +2,8 @@ import { useState, useCallback } from 'react';
 import { encryptMessage, parsePublicKey, KeyInfo } from '../utils/pgp';
 import { validatePublicKey, validatePlaintext } from '../utils/validation';
 
+export type EncryptErrorField = 'message' | 'general';
+
 export interface Recipient {
   id: string;
   key: string;
@@ -14,6 +16,7 @@ interface UseEncryptState {
   message: string;
   encryptedOutput: string;
   error: string | null;
+  errorField: EncryptErrorField | null;
   isLoading: boolean;
   encryptToSelf: boolean;
   selfKey: string;
@@ -55,6 +58,7 @@ export function useEncrypt(): UseEncryptReturn {
     message: '',
     encryptedOutput: '',
     error: null,
+    errorField: null,
     isLoading: false,
     encryptToSelf: false,
     selfKey: '',
@@ -82,6 +86,7 @@ export function useEncrypt(): UseEncryptReturn {
         ...prev,
         recipients: newRecipients,
         error: null,
+        errorField: null,
       };
     });
   }, []);
@@ -95,6 +100,7 @@ export function useEncrypt(): UseEncryptReturn {
         ...prev,
         recipients: [...prev.recipients, createRecipient()],
         error: null,
+        errorField: null,
       };
     });
   }, []);
@@ -108,6 +114,7 @@ export function useEncrypt(): UseEncryptReturn {
         ...prev,
         recipients: prev.recipients.filter(r => r.id !== id),
         error: null,
+        errorField: null,
       };
     });
   }, []);
@@ -119,6 +126,7 @@ export function useEncrypt(): UseEncryptReturn {
         r.id === id ? { ...r, key, keyInfo: null, error: null } : r
       ),
       error: null,
+      errorField: null,
     }));
   }, []);
 
@@ -219,6 +227,7 @@ export function useEncrypt(): UseEncryptReturn {
       ...prev,
       message,
       error: null,
+      errorField: null,
     }));
   }, []);
 
@@ -229,7 +238,7 @@ export function useEncrypt(): UseEncryptReturn {
   }, [state.recipients, validateRecipient]);
 
   const encrypt = useCallback(async () => {
-    setState(prev => ({ ...prev, isLoading: true, error: null, encryptedOutput: '' }));
+    setState(prev => ({ ...prev, isLoading: true, error: null, errorField: null, encryptedOutput: '' }));
 
     // Validate all recipients have keys
     const validRecipients = state.recipients.filter(r => r.key.trim());
@@ -238,6 +247,7 @@ export function useEncrypt(): UseEncryptReturn {
         ...prev,
         isLoading: false,
         error: 'At least one public key is required',
+        errorField: 'general',
       }));
       return;
     }
@@ -253,6 +263,7 @@ export function useEncrypt(): UseEncryptReturn {
             r.id === recipient.id ? { ...r, error: validation.error ?? null } : r
           ),
           error: 'One or more keys are invalid',
+          errorField: 'general',
         }));
         return;
       }
@@ -287,6 +298,7 @@ export function useEncrypt(): UseEncryptReturn {
         ...prev,
         isLoading: false,
         error: messageValidation.error ?? null,
+        errorField: 'message',
       }));
       return;
     }
@@ -304,12 +316,14 @@ export function useEncrypt(): UseEncryptReturn {
         isLoading: false,
         encryptedOutput: result.data!,
         error: null,
+        errorField: null,
       }));
     } else {
       setState(prev => ({
         ...prev,
         isLoading: false,
         error: result.error ?? 'Encryption failed',
+        errorField: 'general',
       }));
     }
   }, [state.recipients, state.message, state.encryptToSelf, state.selfKey]);
@@ -320,6 +334,7 @@ export function useEncrypt(): UseEncryptReturn {
       message: '',
       encryptedOutput: '',
       error: null,
+      errorField: null,
       isLoading: false,
       encryptToSelf: false,
       selfKey: '',

@@ -29,6 +29,7 @@ vi.mock('openpgp', async () => {
     createCleartextMessage: mockHelpers.mockCreateCleartextMessage,
     readMessage: mockHelpers.mockReadMessage,
     readCleartextMessage: mockHelpers.mockReadCleartextMessage,
+    readSignature: mockHelpers.mockReadSignature,
     decryptKey: mockHelpers.mockDecryptKey,
   };
 });

@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 
 interface QRCodeDisplayProps {
@@ -12,8 +12,46 @@ const MAX_QR_LENGTH = 2500;
 export function QRCodeDisplay({ value, onClose }: QRCodeDisplayProps) {
   const [downloading, setDownloading] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   const isTooBig = value.length > MAX_QR_LENGTH;
+
+  useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    closeButtonRef.current?.focus();
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+        return;
+      }
+
+      // Keep Tab focus inside the dialog
+      if (e.key === 'Tab' && dialogRef.current) {
+        const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      previouslyFocused?.focus();
+    };
+  }, [onClose]);
 
   const handleDownload = useCallback(() => {
     setDownloading(true);
@@ -32,11 +70,22 @@ export function QRCodeDisplay({ value, onClose }: QRCodeDisplayProps) {
   }, []);
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      onClick={onClose}
+    >
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="qr-dialog-title"
+        className="bg-white rounded-xl shadow-xl max-w-md w-full p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">QR Code</h3>
+          <h3 id="qr-dialog-title" className="text-lg font-semibold text-gray-900">QR Code</h3>
           <button
+            ref={closeButtonRef}
             onClick={onClose}
             className="p-1 text-secondary hover:text-primary transition-colors"
             aria-label="Close"

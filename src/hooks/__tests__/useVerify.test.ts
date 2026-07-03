@@ -10,7 +10,6 @@ import { TEST_KEYS, TEST_MESSAGES } from '../../test/fixtures/keys';
 import {
   mockReadKey,
   mockVerify,
-  mockReadCleartextMessage,
   createMockKey,
   setupDefaultMocks,
   resetMocks,
@@ -30,6 +29,7 @@ vi.mock('openpgp', async () => {
     createCleartextMessage: mockHelpers.mockCreateCleartextMessage,
     readMessage: mockHelpers.mockReadMessage,
     readCleartextMessage: mockHelpers.mockReadCleartextMessage,
+    readSignature: mockHelpers.mockReadSignature,
     decryptKey: mockHelpers.mockDecryptKey,
   };
 });
@@ -496,5 +496,66 @@ describe('useVerify - Result Parsing', () => {
       expect(result.current.result).toBeTruthy();
       expect(result.current.isLoading).toBe(false);
     });
+  });
+});
+
+describe('useVerify - Detached Mode', () => {
+  beforeEach(() => {
+    setupDefaultMocks();
+  });
+
+  afterEach(() => {
+    resetMocks();
+  });
+
+  it('requires the original message in detached mode', async () => {
+    const { result } = renderHook(() => useVerify());
+
+    act(() => {
+      result.current.setMode('detached');
+      result.current.setPublicKey(TEST_KEYS.alice.publicKey);
+      result.current.setSignedMessage('-----BEGIN PGP SIGNATURE-----\nsig\n-----END PGP SIGNATURE-----');
+    });
+
+    await act(async () => {
+      await result.current.verify();
+    });
+
+    expect(result.current.error).toContain('original message');
+    expect(result.current.errorField).toBe('originalMessage');
+  });
+
+  it('verifies a detached signature with the original message', async () => {
+    const { result } = renderHook(() => useVerify());
+
+    act(() => {
+      result.current.setMode('detached');
+      result.current.setPublicKey(TEST_KEYS.alice.publicKey);
+      result.current.setOriginalMessage('the original text');
+      result.current.setSignedMessage('-----BEGIN PGP SIGNATURE-----\nsig\n-----END PGP SIGNATURE-----');
+    });
+
+    await act(async () => {
+      await result.current.verify();
+    });
+
+    expect(result.current.result?.valid).toBe(true);
+    expect(result.current.result?.message).toBe('the original text');
+  });
+
+  it('routes an invalid key error to the publicKey field even when a message is set', async () => {
+    const { result } = renderHook(() => useVerify());
+
+    act(() => {
+      result.current.setSignedMessage('some signed message');
+      result.current.setPublicKey('INVALID KEY DATA');
+    });
+
+    await act(async () => {
+      await result.current.validateKey();
+    });
+
+    expect(result.current.error).toContain('valid PGP public key');
+    expect(result.current.errorField).toBe('publicKey');
   });
 });

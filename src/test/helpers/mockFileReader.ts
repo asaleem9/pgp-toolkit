@@ -15,31 +15,28 @@ export class MockFileReader {
   error: DOMException | null = null;
   readyState: number = 0;
 
-  readAsText(file: Blob, encoding?: string): void {
-    // Simulate async file reading
-    setTimeout(() => {
-      this.readyState = 2; // DONE
-      if (this.onload) {
-        this.onload({
-          target: this,
-          loaded: (file as any).size || 0,
-          total: (file as any).size || 0,
-        } as ProgressEvent<FileReader>);
-      }
-    }, 0);
+  // Fires onload synchronously: tests assert right after the drop handler
+  // runs, and handlers always assign onload before calling readAsText
+  readAsText(file: Blob, _encoding?: string): void {
+    this.readyState = 2; // DONE
+    if (this.onload) {
+      this.onload({
+        target: this,
+        loaded: file.size || 0,
+        total: file.size || 0,
+      } as ProgressEvent<FileReader>);
+    }
   }
 
   readAsDataURL(file: Blob): void {
-    setTimeout(() => {
-      this.readyState = 2; // DONE
-      if (this.onload) {
-        this.onload({
-          target: this,
-          loaded: (file as any).size || 0,
-          total: (file as any).size || 0,
-        } as ProgressEvent<FileReader>);
-      }
-    }, 0);
+    this.readyState = 2; // DONE
+    if (this.onload) {
+      this.onload({
+        target: this,
+        loaded: file.size || 0,
+        total: file.size || 0,
+      } as ProgressEvent<FileReader>);
+    }
   }
 
   abort(): void {
@@ -54,7 +51,7 @@ export class MockFileReader {
     }
   }
 
-  removeEventListener(type: string, listener: EventListener): void {
+  removeEventListener(type: string, _listener: EventListener): void {
     if (type === 'load') {
       this.onload = null;
     } else if (type === 'error') {
@@ -62,7 +59,7 @@ export class MockFileReader {
     }
   }
 
-  dispatchEvent(event: Event): boolean {
+  dispatchEvent(_event: Event): boolean {
     return true;
   }
 }
@@ -87,16 +84,14 @@ export function setupFileReaderErrorMock(errorMessage: string = 'File read error
   mockReader.error = new DOMException(errorMessage);
 
   mockReader.readAsText = function (file: Blob) {
-    setTimeout(() => {
-      this.readyState = 2; // DONE
-      if (this.onerror) {
-        this.onerror({
-          target: this,
-          loaded: 0,
-          total: (file as any).size || 0,
-        } as ProgressEvent<FileReader>);
-      }
-    }, 0);
+    this.readyState = 2; // DONE
+    if (this.onerror) {
+      this.onerror({
+        target: this,
+        loaded: 0,
+        total: file.size || 0,
+      } as ProgressEvent<FileReader>);
+    }
   };
 
   global.FileReader = vi.fn(() => mockReader) as any;

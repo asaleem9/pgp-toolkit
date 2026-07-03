@@ -48,3 +48,4 @@ context-*.md
 # Claude Code local configuration
 .claude/
 .playwright-mcp/
+.vercel

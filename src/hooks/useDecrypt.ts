@@ -1,6 +1,8 @@
 import { useState, useCallback } from 'react';
 import { decryptMessage, parsePrivateKey, KeyInfo } from '../utils/pgp';
-import { validatePrivateKey, validateEncryptedMessage } from '../utils/validation';
+import { validatePrivateKey, validateEncryptedMessage, validateMessageSize } from '../utils/validation';
+
+export type DecryptErrorField = 'privateKey' | 'passphrase' | 'message' | 'general';
 
 interface UseDecryptState {
   privateKey: string;
@@ -9,6 +11,7 @@ interface UseDecryptState {
   decryptedOutput: string;
   keyInfo: KeyInfo | null;
   error: string | null;
+  errorField: DecryptErrorField | null;
   isLoading: boolean;
   needsPassphrase: boolean;
 }
@@ -30,6 +33,7 @@ export function useDecrypt(): UseDecryptReturn {
     decryptedOutput: '',
     keyInfo: null,
     error: null,
+    errorField: null,
     isLoading: false,
     needsPassphrase: false,
   });
@@ -40,6 +44,7 @@ export function useDecrypt(): UseDecryptReturn {
       privateKey: key,
       keyInfo: null,
       error: null,
+      errorField: null,
       needsPassphrase: false,
     }));
   }, []);
@@ -49,6 +54,7 @@ export function useDecrypt(): UseDecryptReturn {
       ...prev,
       passphrase,
       error: null,
+      errorField: null,
     }));
   }, []);
 
@@ -57,13 +63,19 @@ export function useDecrypt(): UseDecryptReturn {
       ...prev,
       encryptedMessage: message,
       error: null,
+      errorField: null,
     }));
   }, []);
 
   const validateKey = useCallback(async (): Promise<boolean> => {
     const validation = validatePrivateKey(state.privateKey);
     if (!validation.valid) {
-      setState(prev => ({ ...prev, error: validation.error ?? null, keyInfo: null }));
+      setState(prev => ({
+        ...prev,
+        error: validation.error ?? null,
+        errorField: 'privateKey',
+        keyInfo: null,
+      }));
       return false;
     }
 
@@ -72,6 +84,7 @@ export function useDecrypt(): UseDecryptReturn {
       setState(prev => ({
         ...prev,
         error: "This doesn't appear to be a valid PGP private key. Please check and try again.",
+        errorField: 'privateKey',
         keyInfo: null,
       }));
       return false;
@@ -82,12 +95,13 @@ export function useDecrypt(): UseDecryptReturn {
       keyInfo,
       needsPassphrase: keyInfo.isEncrypted ?? false,
       error: null,
+      errorField: null,
     }));
     return true;
   }, [state.privateKey]);
 
   const decrypt = useCallback(async () => {
-    setState(prev => ({ ...prev, isLoading: true, error: null, decryptedOutput: '' }));
+    setState(prev => ({ ...prev, isLoading: true, error: null, errorField: null, decryptedOutput: '' }));
 
     // Validate private key
     const keyValidation = validatePrivateKey(state.privateKey);
@@ -96,6 +110,7 @@ export function useDecrypt(): UseDecryptReturn {
         ...prev,
         isLoading: false,
         error: keyValidation.error ?? null,
+        errorField: 'privateKey',
       }));
       return;
     }
@@ -107,6 +122,18 @@ export function useDecrypt(): UseDecryptReturn {
         ...prev,
         isLoading: false,
         error: messageValidation.error ?? null,
+        errorField: 'message',
+      }));
+      return;
+    }
+
+    const sizeValidation = validateMessageSize(state.encryptedMessage);
+    if (!sizeValidation.valid) {
+      setState(prev => ({
+        ...prev,
+        isLoading: false,
+        error: sizeValidation.error ?? null,
+        errorField: 'message',
       }));
       return;
     }
@@ -124,23 +151,23 @@ export function useDecrypt(): UseDecryptReturn {
         isLoading: false,
         decryptedOutput: result.data!,
         error: null,
+        errorField: null,
+      }));
+    } else if (result.code === 'NEEDS_PASSPHRASE' || result.code === 'WRONG_PASSPHRASE') {
+      setState(prev => ({
+        ...prev,
+        isLoading: false,
+        needsPassphrase: true,
+        error: result.error ?? null,
+        errorField: 'passphrase',
       }));
     } else {
-      // Check if passphrase is needed
-      if (result.error?.includes('passphrase')) {
-        setState(prev => ({
-          ...prev,
-          isLoading: false,
-          needsPassphrase: true,
-          error: result.error ?? null,
-        }));
-      } else {
-        setState(prev => ({
-          ...prev,
-          isLoading: false,
-          error: result.error ?? 'Decryption failed',
-        }));
-      }
+      setState(prev => ({
+        ...prev,
+        isLoading: false,
+        error: result.error ?? 'Decryption failed',
+        errorField: 'general',
+      }));
     }
   }, [state.privateKey, state.encryptedMessage, state.passphrase]);
 
@@ -152,6 +179,7 @@ export function useDecrypt(): UseDecryptReturn {
       decryptedOutput: '',
       keyInfo: null,
       error: null,
+      errorField: null,
       isLoading: false,
       needsPassphrase: false,
     });

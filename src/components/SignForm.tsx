@@ -12,6 +12,7 @@ export function SignForm() {
     signedOutput,
     keyInfo,
     error,
+    errorField,
     isLoading,
     needsPassphrase,
     detachedSignature,
@@ -68,7 +69,7 @@ export function SignForm() {
             onChange={setPrivateKey}
             onBlur={handleKeyBlur}
             keyInfo={keyInfo}
-            error={!message && error && error.includes('private key') ? error : null}
+            error={errorField === 'privateKey' ? error : null}
             keyType="private"
           />
         </div>
@@ -88,16 +89,19 @@ export function SignForm() {
               type="password"
               id="passphrase"
               className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-colors ${
-                error && error.includes('passphrase')
+                errorField === 'passphrase'
                   ? 'border-error focus:ring-error/20 focus:border-error'
                   : 'border-gray-300 focus:ring-primary/20 focus:border-primary'
               }`}
               placeholder="Enter your passphrase"
               value={passphrase}
               onChange={(e) => setPassphrase(e.target.value)}
-              autoComplete="current-password"
+              autoComplete="off"
+              data-1p-ignore="true"
+              data-lpignore="true"
+              data-form-type="other"
             />
-            {error && error.includes('passphrase') && (
+            {errorField === 'passphrase' && error && (
               <p className="mt-1 text-sm text-error" role="alert">
                 {error}
               </p>
@@ -119,7 +123,7 @@ export function SignForm() {
             placeholder="Type the message you want to sign..."
             value={message}
             onChange={setMessage}
-            error={error && error.includes('Message') ? error : null}
+            error={errorField === 'message' ? error : null}
             rows={6}
           />
         </div>
@@ -162,7 +166,7 @@ export function SignForm() {
         </div>
 
         {/* General error */}
-        {error && !error.includes('private key') && !error.includes('Message') && !error.includes('passphrase') && (
+        {errorField === 'general' && error && (
           <div className="mb-4 p-3 bg-error/10 border border-error/20 rounded-lg">
             <p className="text-sm text-error" role="alert">
               {error}
