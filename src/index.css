@@ -46,17 +46,6 @@
   textarea::-webkit-scrollbar-thumb {
     @apply bg-gray-300 rounded hover:bg-gray-400;
   }
-
-  /* Loading spinner animation */
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
-  .animate-spin {
-    animation: spin 1s linear infinite;
-  }
 }
 
 @layer utilities {

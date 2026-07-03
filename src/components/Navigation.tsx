@@ -5,7 +5,7 @@ interface NavigationProps {
   onTabChange: (tab: TabType) => void;
 }
 
-const tabs: { id: TabType; label: string; highlight?: boolean }[] = [
+const tabs: { id: TabType; label: string }[] = [
   { id: 'decrypt', label: 'Decrypt' },
   { id: 'encrypt', label: 'Encrypt' },
   { id: 'generate', label: 'Generate' },
@@ -15,6 +15,33 @@ const tabs: { id: TabType; label: string; highlight?: boolean }[] = [
 ];
 
 export function Navigation({ activeTab, onTabChange }: NavigationProps) {
+  // Roving tabindex: when the landing page is active no tab is selected, so
+  // make the first tab the keyboard entry point
+  const focusableTab = tabs.some((tab) => tab.id === activeTab) ? activeTab : tabs[0].id;
+
+  const handleTabKeyDown = (
+    e: React.KeyboardEvent,
+    index: number,
+    idSuffix: string
+  ) => {
+    let next: number | null = null;
+    if (e.key === 'ArrowRight') {
+      next = (index + 1) % tabs.length;
+    } else if (e.key === 'ArrowLeft') {
+      next = (index - 1 + tabs.length) % tabs.length;
+    } else if (e.key === 'Home') {
+      next = 0;
+    } else if (e.key === 'End') {
+      next = tabs.length - 1;
+    }
+
+    if (next !== null) {
+      e.preventDefault();
+      onTabChange(tabs[next].id);
+      document.getElementById(`${tabs[next].id}-tab${idSuffix}`)?.focus();
+    }
+  };
+
   return (
     <header className="bg-white/80 backdrop-blur-lg border-b border-gray-200/50 sticky top-0 z-50 shadow-sm">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -44,29 +71,24 @@ export function Navigation({ activeTab, onTabChange }: NavigationProps) {
 
           {/* Desktop: inline tabs + GitHub link */}
           <nav className="hidden sm:flex items-center gap-1" role="tablist" aria-label="Main navigation">
-            {tabs.map((tab) => (
+            {tabs.map((tab, index) => (
               <button
                 key={tab.id}
+                id={`${tab.id}-tab`}
                 role="tab"
                 aria-selected={activeTab === tab.id}
                 aria-controls={`${tab.id}-panel`}
+                tabIndex={focusableTab === tab.id ? 0 : -1}
                 className={`relative px-4 py-2 text-sm font-medium transition-all duration-200 whitespace-nowrap rounded-lg ${
-                  tab.highlight && activeTab !== tab.id
-                    ? 'text-primary bg-primary/5 hover:bg-primary/10 border border-primary/20'
-                    : activeTab === tab.id
+                  activeTab === tab.id
                     ? 'text-primary'
                     : 'text-secondary hover:text-primary hover:bg-gray-50'
                 }`}
                 onClick={() => onTabChange(tab.id)}
+                onKeyDown={(e) => handleTabKeyDown(e, index, '')}
               >
                 {activeTab === tab.id && (
                   <span className="absolute inset-x-0 -bottom-px h-0.5 bg-gradient-to-r from-primary-500 to-primary-600 rounded-full" />
-                )}
-                {tab.highlight && activeTab !== tab.id && (
-                  <span className="absolute -top-1 -right-1 flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
-                  </span>
                 )}
                 {tab.label}
               </button>
@@ -92,18 +114,21 @@ export function Navigation({ activeTab, onTabChange }: NavigationProps) {
           role="tablist"
           aria-label="Main navigation"
         >
-          {tabs.map((tab) => (
+          {tabs.map((tab, index) => (
             <button
               key={tab.id}
+              id={`${tab.id}-tab-mobile`}
               role="tab"
               aria-selected={activeTab === tab.id}
               aria-controls={`${tab.id}-panel`}
+              tabIndex={focusableTab === tab.id ? 0 : -1}
               className={`relative px-3 py-1.5 text-xs font-medium transition-all duration-200 whitespace-nowrap rounded-full ${
                 activeTab === tab.id
                   ? 'text-white bg-primary shadow-sm'
                   : 'text-secondary hover:text-primary bg-gray-100 hover:bg-gray-200'
               }`}
               onClick={() => onTabChange(tab.id)}
+              onKeyDown={(e) => handleTabKeyDown(e, index, '-mobile')}
             >
               {tab.label}
             </button>
