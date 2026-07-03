@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useCallback, useState } from 'react';
 import { useDropZone } from '../hooks/useDropZone';
 
 interface DropZoneProps {
@@ -14,13 +14,26 @@ export function DropZone({
   acceptedExtensions,
   hint = 'Drop file here',
 }: DropZoneProps) {
+  const [dropError, setDropError] = useState<string | null>(null);
+
+  const handleContent = useCallback(
+    (content: string) => {
+      setDropError(null);
+      onDrop(content);
+    },
+    [onDrop]
+  );
+
   const { isDragging, handleDragEnter, handleDragLeave, handleDragOver, handleDrop } =
-    useDropZone({ onDrop, acceptedExtensions });
+    useDropZone({ onDrop: handleContent, onError: setDropError, acceptedExtensions });
 
   return (
     <div
       className="relative"
-      onDragEnter={handleDragEnter}
+      onDragEnter={(e) => {
+        setDropError(null);
+        handleDragEnter(e);
+      }}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
@@ -50,6 +63,12 @@ export function DropZone({
             </div>
           </div>
         </div>
+      )}
+
+      {dropError && (
+        <p className="mt-1 text-sm text-error" role="alert">
+          {dropError}
+        </p>
       )}
     </div>
   );

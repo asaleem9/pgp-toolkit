@@ -15,10 +15,10 @@ function App() {
   // Warn user before leaving if there's sensitive data
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      // Check if any forms have data - simple check
-      const textarea = document.querySelector('textarea') as HTMLTextAreaElement | null;
-      const passwordInput = document.querySelector('input[type="password"]') as HTMLInputElement | null;
-      const hasData = textarea?.value || passwordInput?.value;
+      const fields = document.querySelectorAll<HTMLTextAreaElement | HTMLInputElement>(
+        'textarea, input[type="password"]'
+      );
+      const hasData = Array.from(fields).some((field) => field.value);
 
       if (hasData) {
         e.preventDefault();

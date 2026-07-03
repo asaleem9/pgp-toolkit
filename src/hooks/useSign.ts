@@ -1,5 +1,8 @@
 import { useState, useCallback } from 'react';
 import { signMessage, parsePrivateKey, KeyInfo } from '../utils/pgp';
+import { validatePlaintext } from '../utils/validation';
+
+export type SignErrorField = 'privateKey' | 'passphrase' | 'message' | 'general';
 
 interface UseSignState {
   privateKey: string;
@@ -8,6 +11,7 @@ interface UseSignState {
   signedOutput: string;
   keyInfo: KeyInfo | null;
   error: string | null;
+  errorField: SignErrorField | null;
   isLoading: boolean;
   needsPassphrase: boolean;
   detachedSignature: boolean;
@@ -31,6 +35,7 @@ export function useSign(): UseSignReturn {
     signedOutput: '',
     keyInfo: null,
     error: null,
+    errorField: null,
     isLoading: false,
     needsPassphrase: false,
     detachedSignature: false,
@@ -42,6 +47,7 @@ export function useSign(): UseSignReturn {
       privateKey: key,
       keyInfo: null,
       error: null,
+      errorField: null,
       needsPassphrase: false,
     }));
   }, []);
@@ -51,6 +57,7 @@ export function useSign(): UseSignReturn {
       ...prev,
       passphrase,
       error: null,
+      errorField: null,
     }));
   }, []);
 
@@ -59,6 +66,7 @@ export function useSign(): UseSignReturn {
       ...prev,
       message,
       error: null,
+      errorField: null,
     }));
   }, []);
 
@@ -71,7 +79,12 @@ export function useSign(): UseSignReturn {
 
   const validateKey = useCallback(async (): Promise<boolean> => {
     if (!state.privateKey.trim()) {
-      setState(prev => ({ ...prev, error: 'Private key is required', keyInfo: null }));
+      setState(prev => ({
+        ...prev,
+        error: 'Private key is required',
+        errorField: 'privateKey',
+        keyInfo: null,
+      }));
       return false;
     }
 
@@ -80,6 +93,7 @@ export function useSign(): UseSignReturn {
       setState(prev => ({
         ...prev,
         error: "This doesn't appear to be a valid PGP private key. Please check and try again.",
+        errorField: 'privateKey',
         keyInfo: null,
       }));
       return false;
@@ -90,27 +104,31 @@ export function useSign(): UseSignReturn {
       keyInfo,
       needsPassphrase: keyInfo.isEncrypted ?? false,
       error: null,
+      errorField: null,
     }));
     return true;
   }, [state.privateKey]);
 
   const sign = useCallback(async () => {
-    setState(prev => ({ ...prev, isLoading: true, error: null, signedOutput: '' }));
+    setState(prev => ({ ...prev, isLoading: true, error: null, errorField: null, signedOutput: '' }));
 
     if (!state.privateKey.trim()) {
       setState(prev => ({
         ...prev,
         isLoading: false,
         error: 'Private key is required',
+        errorField: 'privateKey',
       }));
       return;
     }
 
-    if (!state.message.trim()) {
+    const messageValidation = validatePlaintext(state.message);
+    if (!messageValidation.valid) {
       setState(prev => ({
         ...prev,
         isLoading: false,
-        error: 'Message is required',
+        error: messageValidation.error ?? null,
+        errorField: 'message',
       }));
       return;
     }
@@ -128,22 +146,23 @@ export function useSign(): UseSignReturn {
         isLoading: false,
         signedOutput: result.data!,
         error: null,
+        errorField: null,
+      }));
+    } else if (result.code === 'NEEDS_PASSPHRASE' || result.code === 'WRONG_PASSPHRASE') {
+      setState(prev => ({
+        ...prev,
+        isLoading: false,
+        needsPassphrase: true,
+        error: result.error ?? null,
+        errorField: 'passphrase',
       }));
     } else {
-      if (result.error?.includes('passphrase')) {
-        setState(prev => ({
-          ...prev,
-          isLoading: false,
-          needsPassphrase: true,
-          error: result.error ?? null,
-        }));
-      } else {
-        setState(prev => ({
-          ...prev,
-          isLoading: false,
-          error: result.error ?? 'Signing failed',
-        }));
-      }
+      setState(prev => ({
+        ...prev,
+        isLoading: false,
+        error: result.error ?? 'Signing failed',
+        errorField: 'general',
+      }));
     }
   }, [state.privateKey, state.message, state.passphrase, state.detachedSignature]);
 
@@ -155,6 +174,7 @@ export function useSign(): UseSignReturn {
       signedOutput: '',
       keyInfo: null,
       error: null,
+      errorField: null,
       isLoading: false,
       needsPassphrase: false,
       detachedSignature: false,

@@ -1,4 +1,4 @@
-const MAX_MESSAGE_SIZE = 1024 * 1024; // 1MB
+export const MAX_MESSAGE_SIZE = 1024 * 1024; // 1MB
 
 export interface ValidationResult {
   valid: boolean;

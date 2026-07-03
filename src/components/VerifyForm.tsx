@@ -12,6 +12,7 @@ export function VerifyForm() {
     result,
     keyInfo,
     error,
+    errorField,
     isLoading,
     setPublicKey,
     setSignedMessage,
@@ -76,7 +77,7 @@ export function VerifyForm() {
             onChange={setPublicKey}
             onBlur={handleKeyBlur}
             keyInfo={keyInfo}
-            error={!signedMessage && error && error.includes('public key') ? error : null}
+            error={errorField === 'publicKey' ? error : null}
             keyType="public"
           />
         </div>
@@ -131,7 +132,7 @@ export function VerifyForm() {
               <textarea
                 id="original-message-input"
                 className={`w-full h-32 px-3 py-2 font-mono text-sm border rounded-lg resize-none focus:outline-none focus:ring-2 transition-colors ${
-                  error && error.includes('original message')
+                  errorField === 'originalMessage'
                     ? 'border-error focus:ring-error/20 focus:border-error'
                     : 'border-gray-300 focus:ring-primary/20 focus:border-primary'
                 }`}
@@ -141,7 +142,7 @@ export function VerifyForm() {
                 spellCheck={false}
               />
             </DropZone>
-            {error && error.includes('original message') && (
+            {errorField === 'originalMessage' && error && (
               <p className="mt-1 text-sm text-error" role="alert">
                 {error}
               </p>
@@ -166,7 +167,7 @@ export function VerifyForm() {
             <textarea
               id="signed-message-input"
               className={`w-full h-40 px-3 py-2 font-mono text-sm border rounded-lg resize-none focus:outline-none focus:ring-2 transition-colors ${
-                error && !error.includes('original message') && (error.includes('message') || error.includes('ignature'))
+                errorField === 'signature'
                   ? 'border-error focus:ring-error/20 focus:border-error'
                   : 'border-gray-300 focus:ring-primary/20 focus:border-primary'
               }`}
@@ -180,7 +181,7 @@ export function VerifyForm() {
               spellCheck={false}
             />
           </DropZone>
-          {error && !error.includes('original message') && (error.includes('message') || error.includes('ignature')) && (
+          {errorField === 'signature' && error && (
             <p className="mt-1 text-sm text-error" role="alert">
               {error}
             </p>
@@ -188,7 +189,7 @@ export function VerifyForm() {
         </div>
 
         {/* General error */}
-        {error && !error.includes('public key') && !error.includes('message') && (
+        {errorField === 'general' && error && (
           <div className="mb-4 p-3 bg-error/10 border border-error/20 rounded-lg">
             <p className="text-sm text-error" role="alert">
               {error}

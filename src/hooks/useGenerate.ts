@@ -11,6 +11,7 @@ interface GeneratedKeys {
   privateKey: string;
   fingerprint: string;
   keyId: string;
+  isProtected: boolean;
 }
 
 interface UseGenerateReturn {
@@ -40,7 +41,7 @@ interface UseGenerateReturn {
 export function useGenerate(): UseGenerateReturn {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [passphrase, setPassphrase] = useState('');
+  const [passphrase, setPassphraseState] = useState('');
   const [confirmPassphrase, setConfirmPassphrase] = useState('');
   const [algorithm, setAlgorithm] = useState<KeyAlgorithm>('ecc');
   const [curve, setCurve] = useState<ECCCurve>('curve25519');
@@ -50,6 +51,15 @@ export function useGenerate(): UseGenerateReturn {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Clearing the passphrase hides the confirm field, so drop its stale value
+  // too - otherwise the passphrase checks silently stop applying
+  const setPassphrase = useCallback((value: string) => {
+    setPassphraseState(value);
+    if (!value) {
+      setConfirmPassphrase('');
+    }
+  }, []);
+
   const clearAll = useCallback(() => {
     clearString(passphrase);
     clearString(confirmPassphrase);
@@ -58,7 +68,7 @@ export function useGenerate(): UseGenerateReturn {
     }
     setName('');
     setEmail('');
-    setPassphrase('');
+    setPassphraseState('');
     setConfirmPassphrase('');
     setAlgorithm('ecc');
     setCurve('curve25519');
@@ -132,6 +142,7 @@ export function useGenerate(): UseGenerateReturn {
         privateKey,
         fingerprint,
         keyId,
+        isProtected: passphrase.length > 0,
       });
     } catch (err) {
       console.error('Key generation error:', err);

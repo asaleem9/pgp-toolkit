@@ -59,6 +59,7 @@ export function EncryptForm() {
     message,
     encryptedOutput,
     error,
+    errorField,
     isLoading,
     encryptToSelf,
     selfKey,
@@ -205,13 +206,13 @@ export function EncryptForm() {
             placeholder="Type your secret message here..."
             value={message}
             onChange={setMessage}
-            error={error && error.includes('Message') ? error : null}
+            error={errorField === 'message' ? error : null}
             rows={6}
           />
         </div>
 
         {/* General error */}
-        {error && !error.includes('public key') && !error.includes('Message') && (
+        {errorField === 'general' && error && (
           <div className="mb-4 p-3 bg-error/10 border border-error/20 rounded-lg">
             <p className="text-sm text-error" role="alert">
               {error}

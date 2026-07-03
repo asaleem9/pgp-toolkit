@@ -16,16 +16,20 @@ export interface EncryptResult {
   error?: string;
 }
 
+export type PassphraseErrorCode = 'NEEDS_PASSPHRASE' | 'WRONG_PASSPHRASE';
+
 export interface DecryptResult {
   success: boolean;
   data?: string;
   error?: string;
+  code?: PassphraseErrorCode;
 }
 
 export interface SignResult {
   success: boolean;
   data?: string;
   error?: string;
+  code?: PassphraseErrorCode;
 }
 
 export interface VerifyResult {
@@ -140,6 +144,7 @@ export async function decryptMessage(
         return {
           success: false,
           error: 'This private key is protected by a passphrase. Please enter your passphrase.',
+          code: 'NEEDS_PASSPHRASE',
         };
       }
 
@@ -152,6 +157,7 @@ export async function decryptMessage(
         return {
           success: false,
           error: 'Incorrect passphrase. Please try again.',
+          code: 'WRONG_PASSPHRASE',
         };
       }
     }
@@ -210,6 +216,7 @@ export async function signMessage(
         return {
           success: false,
           error: 'This private key is protected by a passphrase. Please enter your passphrase.',
+          code: 'NEEDS_PASSPHRASE',
         };
       }
 
@@ -222,6 +229,7 @@ export async function signMessage(
         return {
           success: false,
           error: 'Incorrect passphrase. Please try again.',
+          code: 'WRONG_PASSPHRASE',
         };
       }
     }

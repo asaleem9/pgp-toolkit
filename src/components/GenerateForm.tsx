@@ -343,6 +343,14 @@ export function GenerateForm() {
                     <dt className="text-xs font-medium text-secondary uppercase">Fingerprint</dt>
                     <dd className="mt-1 font-mono text-gray-900 text-xs break-all">{formatFingerprint(generatedKeys.fingerprint)}</dd>
                   </div>
+                  <div>
+                    <dt className="text-xs font-medium text-secondary uppercase">Protection</dt>
+                    <dd className={`mt-1 text-sm ${generatedKeys.isProtected ? 'text-success' : 'text-warning'}`}>
+                      {generatedKeys.isProtected
+                        ? 'Private key is passphrase-protected'
+                        : 'Private key has NO passphrase'}
+                    </dd>
+                  </div>
                 </div>
               </div>
 
