@@ -132,7 +132,7 @@ export function setupDefaultMocks() {
   });
 
   // Default successful encryption
-  mockEncrypt.mockImplementation(async ({ message, encryptionKeys }) => {
+  mockEncrypt.mockImplementation(async ({ encryptionKeys }) => {
     if (!encryptionKeys || encryptionKeys.length === 0) {
       throw new Error('No encryption keys provided');
     }
@@ -140,7 +140,7 @@ export function setupDefaultMocks() {
   });
 
   // Default successful decryption
-  mockDecrypt.mockImplementation(async ({ message, decryptionKeys }) => {
+  mockDecrypt.mockImplementation(async ({ decryptionKeys }) => {
     if (!decryptionKeys) {
       throw new Error('No decryption key provided');
     }
@@ -152,7 +152,7 @@ export function setupDefaultMocks() {
   });
 
   // Default successful signing
-  mockSign.mockImplementation(async ({ message, signingKeys, format, detached }) => {
+  mockSign.mockImplementation(async ({ signingKeys, format, detached }) => {
     if (!signingKeys) {
       throw new Error('No signing key provided');
     }
@@ -167,7 +167,7 @@ export function setupDefaultMocks() {
   });
 
   // Default successful verification
-  mockVerify.mockImplementation(async ({ message, verificationKeys }) => {
+  mockVerify.mockImplementation(async ({ verificationKeys }) => {
     if (!verificationKeys || verificationKeys.length === 0) {
       throw new Error('No verification key provided');
     }
@@ -213,7 +213,7 @@ export function setupDefaultMocks() {
     return { packets: [{ created: new Date('2024-01-01') }] };
   });
 
-  mockDecryptKey.mockImplementation(async ({ privateKey, passphrase }) => {
+  mockDecryptKey.mockImplementation(async ({ passphrase }) => {
     if (!passphrase || passphrase.length === 0) {
       throw new Error('Passphrase required');
     }

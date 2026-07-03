@@ -112,6 +112,53 @@ test.describe('Encrypt-Decrypt Round Trip', () => {
 });
 
 test.describe('Sign-Verify Round Trip', () => {
+  test('signs with detached signature and verifies it', async ({ page }) => {
+    const signPage = new SignPage(page);
+    const verifyPage = new VerifyPage(page);
+
+    // Sign in detached mode
+    await signPage.goto();
+    await signPage.sign(TEST_KEYS.alice.privateKey, 'Detached round-trip message', undefined, true);
+    await expect(signPage.outputTextarea).toBeVisible();
+    const signature = await signPage.getSignedOutput();
+    expect(signature).toContain('BEGIN PGP SIGNATURE');
+
+    // Verify the signature against the original message
+    await verifyPage.goto();
+    await verifyPage.verifyDetached(
+      TEST_KEYS.alice.publicKey,
+      'Detached round-trip message',
+      signature
+    );
+
+    expect(await verifyPage.isValid()).toBe(true);
+  });
+
+  test('rejects a detached signature against a different message', async ({ page }) => {
+    const signPage = new SignPage(page);
+    const verifyPage = new VerifyPage(page);
+
+    await signPage.goto();
+    await signPage.sign(TEST_KEYS.alice.privateKey, 'The signed text', undefined, true);
+    await expect(signPage.outputTextarea).toBeVisible();
+    const signature = await signPage.getSignedOutput();
+
+    await verifyPage.goto();
+    await verifyPage.verifyDetached(TEST_KEYS.alice.publicKey, 'A different text', signature);
+
+    expect(await verifyPage.isInvalid()).toBe(true);
+  });
+
+  test('shows a friendly error when verifying an unsigned message', async ({ page }) => {
+    const verifyPage = new VerifyPage(page);
+
+    await verifyPage.goto();
+    await verifyPage.verify(TEST_KEYS.alice.publicKey, TEST_MESSAGES.encryptedToAlice);
+
+    await expect(verifyPage.errorMessage.first()).toBeVisible();
+    await expect(verifyPage.errorMessage.first()).not.toContainText('destructure');
+  });
+
   test('signs and verifies clear-signed message', async ({ page }) => {
     const signPage = new SignPage(page);
     const verifyPage = new VerifyPage(page);

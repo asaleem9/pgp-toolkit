@@ -25,4 +25,15 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // Test code mocks external APIs where precise types add noise, not safety
+    files: ['src/test/**', 'src/**/__tests__/**', 'e2e/**'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
+    },
+  },
 )

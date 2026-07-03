@@ -6,7 +6,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { useSign } from '../useSign';
-import { TEST_KEYS, TEST_MESSAGES } from '../../test/fixtures/keys';
+import { TEST_KEYS } from '../../test/fixtures/keys';
 import {
   mockReadPrivateKey,
   mockSign,
@@ -30,6 +30,7 @@ vi.mock('openpgp', async () => {
     createCleartextMessage: mockHelpers.mockCreateCleartextMessage,
     readMessage: mockHelpers.mockReadMessage,
     readCleartextMessage: mockHelpers.mockReadCleartextMessage,
+    readSignature: mockHelpers.mockReadSignature,
     decryptKey: mockHelpers.mockDecryptKey,
   };
 });
@@ -484,5 +485,63 @@ describe('useSign - Passphrase Handling', () => {
 
     expect(result.current.signedOutput).toBeDefined();
     expect(result.current.error).toBeNull();
+  });
+});
+
+describe('useSign - Error Routing', () => {
+  beforeEach(() => {
+    setupDefaultMocks();
+  });
+
+  afterEach(() => {
+    resetMocks();
+  });
+
+  it('routes an invalid key error to the privateKey field even when a message is set', async () => {
+    const { result } = renderHook(() => useSign());
+
+    act(() => {
+      result.current.setMessage('Hello world');
+      result.current.setPrivateKey('INVALID KEY DATA');
+    });
+
+    await act(async () => {
+      await result.current.validateKey();
+    });
+
+    expect(result.current.error).toContain('valid PGP private key');
+    expect(result.current.errorField).toBe('privateKey');
+  });
+
+  it('routes passphrase errors to the passphrase field', async () => {
+    const { result } = renderHook(() => useSign());
+
+    act(() => {
+      result.current.setPrivateKey(TEST_KEYS.bob.privateKey.replace('PRIVATE KEY', 'ENCRYPTED PRIVATE KEY'));
+      result.current.setMessage('Hello world');
+    });
+
+    await act(async () => {
+      await result.current.sign();
+    });
+
+    expect(result.current.errorField).toBe('passphrase');
+    expect(result.current.needsPassphrase).toBe(true);
+  });
+
+  it('routes an oversized message to the message field', async () => {
+    const { result } = renderHook(() => useSign());
+
+    act(() => {
+      result.current.setPrivateKey(TEST_KEYS.alice.privateKey);
+      result.current.setMessage('x'.repeat(1024 * 1024 + 1));
+    });
+
+    await act(async () => {
+      await result.current.sign();
+    });
+
+    expect(result.current.error).toContain('maximum size');
+    expect(result.current.errorField).toBe('message');
   });
 });

@@ -45,20 +45,20 @@ test.describe('Encryption', () => {
     await expect(encryptPage.keyInfoPanel).toContainText('1562 A178');
   });
 
-  test('encrypt button is disabled without key', async ({ page }) => {
+  test('encrypt button is disabled without key', async () => {
     await encryptPage.messageInput.fill(TEST_MESSAGES.plaintext);
 
     await expect(encryptPage.encryptButton).toBeDisabled();
   });
 
-  test('encrypt button is disabled without message', async ({ page }) => {
+  test('encrypt button is disabled without message', async () => {
     await encryptPage.publicKeyTextarea.fill(TEST_KEYS.alice.publicKey);
     await encryptPage.publicKeyTextarea.blur();
 
     await expect(encryptPage.encryptButton).toBeDisabled();
   });
 
-  test('copy button copies encrypted output', async ({ page, context, browserName }) => {
+  test('copy button copies encrypted output', async ({ context }) => {
     // Grant clipboard permissions - may not work in all browsers/modes
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
 
@@ -100,7 +100,7 @@ test.describe('Encryption', () => {
     await expect(page.locator('canvas')).toBeVisible();
   });
 
-  test('clear all resets the form', async ({ page }) => {
+  test('clear all resets the form', async () => {
     await encryptPage.encrypt(TEST_KEYS.alice.publicKey, TEST_MESSAGES.plaintext);
 
     await expect(encryptPage.outputTextarea).toBeVisible();
@@ -158,7 +158,7 @@ test.describe('Multiple Recipients', () => {
     await expect(removeButtons).toHaveCount(0);
   });
 
-  test('encrypts to multiple recipients', async ({ page }) => {
+  test('encrypts to multiple recipients', async () => {
     await encryptPage.publicKeyTextarea.fill(TEST_KEYS.alice.publicKey);
     await encryptPage.publicKeyTextarea.blur();
 
@@ -196,7 +196,7 @@ test.describe('Encrypt to Self', () => {
     await encryptPage.goto();
   });
 
-  test('shows self key input when checkbox is checked', async ({ page }) => {
+  test('shows self key input when checkbox is checked', async () => {
     await expect(encryptPage.selfKeyTextarea).not.toBeVisible();
 
     await encryptPage.encryptToSelfCheckbox.check();
@@ -204,7 +204,7 @@ test.describe('Encrypt to Self', () => {
     await expect(encryptPage.selfKeyTextarea).toBeVisible();
   });
 
-  test('hides self key input when checkbox is unchecked', async ({ page }) => {
+  test('hides self key input when checkbox is unchecked', async () => {
     await encryptPage.encryptToSelfCheckbox.check();
     await expect(encryptPage.selfKeyTextarea).toBeVisible();
 
@@ -212,7 +212,7 @@ test.describe('Encrypt to Self', () => {
     await expect(encryptPage.selfKeyTextarea).not.toBeVisible();
   });
 
-  test('encrypts to self when enabled', async ({ page }) => {
+  test('encrypts to self when enabled', async () => {
     await encryptPage.publicKeyTextarea.fill(TEST_KEYS.alice.publicKey);
     await encryptPage.publicKeyTextarea.blur();
 
@@ -226,7 +226,7 @@ test.describe('Encrypt to Self', () => {
     expect(output).toContain('-----BEGIN PGP MESSAGE-----');
   });
 
-  test('shows error when encrypt to self enabled but no key', async ({ page }) => {
+  test('shows error when encrypt to self enabled but no key', async () => {
     await encryptPage.publicKeyTextarea.fill(TEST_KEYS.alice.publicKey);
     await encryptPage.publicKeyTextarea.blur();
 

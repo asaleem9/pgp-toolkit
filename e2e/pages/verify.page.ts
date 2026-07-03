@@ -5,6 +5,8 @@ export class VerifyPage {
   readonly tabButton: Locator;
   readonly publicKeyTextarea: Locator;
   readonly signedMessageTextarea: Locator;
+  readonly originalMessageTextarea: Locator;
+  readonly detachedRadio: Locator;
   readonly verifyButton: Locator;
   readonly validResult: Locator;
   readonly invalidResult: Locator;
@@ -21,6 +23,8 @@ export class VerifyPage {
     // IDs go directly on textareas in KeyInput
     this.publicKeyTextarea = page.locator('#verify-public-key');
     this.signedMessageTextarea = page.locator('#signed-message-input');
+    this.originalMessageTextarea = page.locator('#original-message-input');
+    this.detachedRadio = page.getByText('Detached signature', { exact: true });
     this.verifyButton = page.getByRole('button', { name: 'Verify Signature' });
     // Valid/invalid result containers
     this.validResult = page.locator('text=Valid Signature').locator('..');
@@ -43,6 +47,15 @@ export class VerifyPage {
     await this.publicKeyTextarea.fill(publicKey);
     await this.publicKeyTextarea.blur();
     await this.signedMessageTextarea.fill(signedMessage);
+    await this.verifyButton.click();
+  }
+
+  async verifyDetached(publicKey: string, originalMessage: string, signature: string) {
+    await this.publicKeyTextarea.fill(publicKey);
+    await this.publicKeyTextarea.blur();
+    await this.detachedRadio.click();
+    await this.originalMessageTextarea.fill(originalMessage);
+    await this.signedMessageTextarea.fill(signature);
     await this.verifyButton.click();
   }
 

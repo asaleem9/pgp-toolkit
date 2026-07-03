@@ -24,7 +24,7 @@ test.describe('Key Inspector', () => {
     await expect(inspectPage.privateKeyWarning).toBeVisible();
   });
 
-  test('displays algorithm info', async ({ page }) => {
+  test('displays algorithm info', async () => {
     await inspectPage.inspect(TEST_KEYS.alice.publicKey);
 
     await expect(inspectPage.algorithmInfo).toBeVisible();

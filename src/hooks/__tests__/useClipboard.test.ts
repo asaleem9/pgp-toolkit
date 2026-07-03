@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, waitFor, act } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { useClipboard } from '../useClipboard';
 
 describe('useClipboard', () => {
@@ -45,13 +45,11 @@ describe('useClipboard', () => {
 
     expect(result.current.copied).toBe(true);
 
-    act(() => {
+    await act(async () => {
       vi.advanceTimersByTime(2000);
     });
 
-    await waitFor(() => {
-      expect(result.current.copied).toBe(false);
-    });
+    expect(result.current.copied).toBe(false);
   });
 
   it('should use custom reset delay', async () => {
@@ -64,20 +62,18 @@ describe('useClipboard', () => {
     expect(result.current.copied).toBe(true);
 
     // 2 seconds should not reset
-    act(() => {
+    await act(async () => {
       vi.advanceTimersByTime(2000);
     });
 
     expect(result.current.copied).toBe(true);
 
     // 5 seconds should reset
-    act(() => {
+    await act(async () => {
       vi.advanceTimersByTime(3000);
     });
 
-    await waitFor(() => {
-      expect(result.current.copied).toBe(false);
-    });
+    expect(result.current.copied).toBe(false);
   });
 
   it('should reset immediately with reset()', async () => {
@@ -100,7 +96,10 @@ describe('useClipboard', () => {
     // Mock clipboard API failure
     vi.mocked(navigator.clipboard.writeText).mockRejectedValue(new Error('Not allowed'));
 
-    const execCommandSpy = vi.spyOn(document, 'execCommand').mockReturnValue(true);
+    // jsdom 27 removed document.execCommand entirely; install one to exercise
+    // the fallback path browsers still have
+    const execCommandMock = vi.fn().mockReturnValue(true);
+    document.execCommand = execCommandMock;
     const appendChildSpy = vi.spyOn(document.body, 'appendChild');
     const removeChildSpy = vi.spyOn(document.body, 'removeChild');
 
@@ -113,20 +112,21 @@ describe('useClipboard', () => {
 
     expect(success).toBe(true);
     expect(result.current.copied).toBe(true);
-    expect(execCommandSpy).toHaveBeenCalledWith('copy');
+    expect(execCommandMock).toHaveBeenCalledWith('copy');
     expect(appendChildSpy).toHaveBeenCalled();
     expect(removeChildSpy).toHaveBeenCalled();
 
-    execCommandSpy.mockRestore();
     appendChildSpy.mockRestore();
     removeChildSpy.mockRestore();
+    Reflect.deleteProperty(document, 'execCommand');
   });
 
   it('should return false when both methods fail', async () => {
     vi.mocked(navigator.clipboard.writeText).mockRejectedValue(new Error('Not allowed'));
-    const execCommandSpy = vi.spyOn(document, 'execCommand').mockImplementation(() => {
+    const execCommandMock = vi.fn().mockImplementation(() => {
       throw new Error('Not supported');
     });
+    document.execCommand = execCommandMock;
 
     const { result } = renderHook(() => useClipboard());
 
@@ -138,7 +138,7 @@ describe('useClipboard', () => {
     expect(success).toBe(false);
     expect(result.current.copied).toBe(false);
 
-    execCommandSpy.mockRestore();
+    Reflect.deleteProperty(document, 'execCommand');
   });
 
   it('should handle empty string', async () => {

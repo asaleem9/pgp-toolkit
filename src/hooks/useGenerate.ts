@@ -108,17 +108,19 @@ export function useGenerate(): UseGenerateReturn {
     try {
       const userIds = [{ name: name.trim(), email: email.trim() }];
 
-      // Calculate expiration date
-      const expirationDate = expirationYears > 0
-        ? new Date(Date.now() + expirationYears * 365 * 24 * 60 * 60 * 1000)
-        : undefined; // undefined means no expiration
+      // Expiration is expressed in seconds from now; use calendar years so
+      // "2 years" lands on the same date instead of drifting across leap years
+      let keyExpirationTime: number | undefined;
+      if (expirationYears > 0) {
+        const expiry = new Date();
+        expiry.setFullYear(expiry.getFullYear() + expirationYears);
+        keyExpirationTime = Math.floor((expiry.getTime() - Date.now()) / 1000);
+      }
 
       const commonOptions = {
         userIDs: userIds,
         passphrase: passphrase || undefined,
-        keyExpirationTime: expirationDate
-          ? Math.floor((expirationDate.getTime() - Date.now()) / 1000)
-          : undefined,
+        keyExpirationTime,
         format: 'armored' as const,
       };
 
