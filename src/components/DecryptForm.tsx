@@ -44,7 +44,7 @@ export function DecryptForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-soft border border-gray-200/50 p-6 hover:shadow-lg transition-shadow duration-300">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
+        <h2 className="font-display text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
           <span className="w-1 h-6 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full" />
           Decrypt a Message
         </h2>

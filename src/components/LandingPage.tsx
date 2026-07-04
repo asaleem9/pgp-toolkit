@@ -60,7 +60,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
           </svg>
           100% Client-Side Encryption
         </div>
-        <h1 className="text-4xl sm:text-5xl font-bold text-primary-900 tracking-tight leading-tight">
+        <h1 className="font-display text-4xl sm:text-5xl font-extrabold text-primary-900 tracking-tight leading-tight">
           PGP encryption,<br />right in your browser
         </h1>
         <p className="mt-4 text-lg text-secondary max-w-xl mx-auto">
@@ -89,7 +89,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
 
       {/* Security Features */}
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
-        <h2 className="text-sm font-semibold text-secondary uppercase tracking-wider text-center mb-6">
+        <h2 className="font-display text-sm font-semibold text-secondary uppercase tracking-wider text-center mb-6">
           Why it's secure
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
