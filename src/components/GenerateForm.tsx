@@ -3,6 +3,9 @@ import { useGenerate, ECCCurve, RSABits } from '../hooks/useGenerate';
 import { OutputDisplay } from './OutputDisplay';
 import { formatFingerprint } from '../utils/pgp';
 import { TrustBadge } from './TrustBadge';
+import { PassphraseInput } from './PassphraseInput';
+import { useAnnounce } from '../hooks/useAnnounce';
+import { isValidEmail } from '../utils/validation';
 import { Button } from './ui/Button';
 import { Card } from './ui/Card';
 import { SectionHeading } from './ui/SectionHeading';
@@ -36,6 +39,17 @@ export function GenerateForm() {
 
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [activeKeyTab, setActiveKeyTab] = useState<'public' | 'private'>('public');
+  const [emailTouched, setEmailTouched] = useState(false);
+  const announce = useAnnounce();
+
+  const passphraseMismatch = Boolean(confirmPassphrase && passphrase !== confirmPassphrase);
+  const emailInvalid = emailTouched && email.trim() !== '' && !isValidEmail(email);
+
+  useEffect(() => {
+    if (generatedKeys) {
+      announce('Key pair generated');
+    }
+  }, [generatedKeys, announce]);
 
   // Use ref to avoid useEffect triggering on every clearAll change
   const clearAllRef = useRef(clearAll);
@@ -94,9 +108,20 @@ export function GenerateForm() {
                       id="gen-email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      onBlur={() => setEmailTouched(true)}
                       placeholder="john@example.com"
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+                      aria-invalid={emailInvalid}
+                      className={`w-full px-4 py-2.5 border rounded-xl focus:outline-none focus:ring-2 transition-colors ${
+                        emailInvalid
+                          ? 'border-error focus:ring-error/20 focus:border-error'
+                          : 'border-gray-300 focus:ring-primary/20 focus:border-primary'
+                      }`}
                     />
+                    {emailInvalid && (
+                      <p className="mt-1 text-sm text-error" role="alert">
+                        Please enter a valid email address
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -109,17 +134,11 @@ export function GenerateForm() {
                     <label htmlFor="gen-passphrase" className="block text-sm font-medium text-gray-700 mb-1">
                       Passphrase
                     </label>
-                    <input
-                      type="password"
+                    <PassphraseInput
                       id="gen-passphrase"
                       value={passphrase}
-                      onChange={(e) => setPassphrase(e.target.value)}
+                      onChange={setPassphrase}
                       placeholder="Strong passphrase (min 8 characters)"
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-                      autoComplete="off"
-                      data-1p-ignore="true"
-                      data-lpignore="true"
-                      data-form-type="other"
                     />
                     <p className="mt-1 text-xs text-secondary">
                       Protects your private key. Leave empty for no passphrase (not recommended).
@@ -130,22 +149,18 @@ export function GenerateForm() {
                       <label htmlFor="gen-confirm-passphrase" className="block text-sm font-medium text-gray-700 mb-1">
                         Confirm Passphrase
                       </label>
-                      <input
-                        type="password"
+                      <PassphraseInput
                         id="gen-confirm-passphrase"
                         value={confirmPassphrase}
-                        onChange={(e) => setConfirmPassphrase(e.target.value)}
+                        onChange={setConfirmPassphrase}
                         placeholder="Confirm your passphrase"
-                        className={`w-full px-4 py-2.5 border rounded-xl focus:outline-none focus:ring-2 transition-colors ${
-                          confirmPassphrase && passphrase !== confirmPassphrase
-                            ? 'border-error focus:ring-error/20 focus:border-error'
-                            : 'border-gray-300 focus:ring-primary/20 focus:border-primary'
-                        }`}
-                        autoComplete="off"
-                        data-1p-ignore="true"
-                        data-lpignore="true"
-                        data-form-type="other"
+                        hasError={passphraseMismatch}
                       />
+                      {passphraseMismatch && (
+                        <p className="mt-1 text-sm text-error" role="alert">
+                          Passphrases do not match
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
@@ -172,10 +187,10 @@ export function GenerateForm() {
                 {showAdvanced && (
                   <div className="mt-4 p-4 bg-gray-50 rounded-xl space-y-4">
                     {/* Algorithm */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <fieldset>
+                      <legend className="block text-sm font-medium text-gray-700 mb-2">
                         Algorithm
-                      </label>
+                      </legend>
                       <div className="flex gap-4">
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input
@@ -198,7 +213,7 @@ export function GenerateForm() {
                           <span className="text-sm">RSA</span>
                         </label>
                       </div>
-                    </div>
+                    </fieldset>
 
                     {/* ECC Curve or RSA Bits */}
                     {algorithm === 'ecc' ? (

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useClipboard } from '../hooks/useClipboard';
 import { QRCodeDisplay } from './QRCodeDisplay';
+import { useAnnounce } from '../hooks/useAnnounce';
 import { Button } from './ui/Button';
 import { CheckIcon, CopyIcon, DownloadIcon, QrCodeIcon } from './ui/icons';
 
@@ -25,9 +26,11 @@ export function OutputDisplay({
 }: OutputDisplayProps) {
   const { copied, copy } = useClipboard();
   const [showQR, setShowQR] = useState(false);
+  const announce = useAnnounce();
 
   const handleCopy = () => {
     copy(value);
+    announce('Copied to clipboard');
   };
 
   const handleDownload = () => {

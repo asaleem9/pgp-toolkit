@@ -3,6 +3,8 @@ import { useDecrypt } from '../hooks/useDecrypt';
 import { KeyInput } from './KeyInput';
 import { MessageInput } from './MessageInput';
 import { OutputDisplay } from './OutputDisplay';
+import { PassphraseInput } from './PassphraseInput';
+import { useAnnounce } from '../hooks/useAnnounce';
 import { Button } from './ui/Button';
 import { Card } from './ui/Card';
 import { SectionHeading } from './ui/SectionHeading';
@@ -27,12 +29,20 @@ export function DecryptForm() {
     validateKey,
   } = useDecrypt();
 
+  const announce = useAnnounce();
+
   // Clear sensitive data when unmounting
   useEffect(() => {
     return () => {
       clearAll();
     };
   }, [clearAll]);
+
+  useEffect(() => {
+    if (decryptedOutput) {
+      announce('Message decrypted');
+    }
+  }, [decryptedOutput, announce]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,21 +81,11 @@ export function DecryptForm() {
           <div className="mb-6">
             <StepBadge step="2">Enter Passphrase (key is protected)</StepBadge>
             <div className="space-y-2">
-              <input
-                type="password"
+              <PassphraseInput
                 id="passphrase"
-                className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 transition-colors ${
-                  errorField === 'passphrase'
-                    ? 'border-error focus:ring-error/20 focus:border-error'
-                    : 'border-gray-300 focus:ring-primary/20 focus:border-primary'
-                }`}
-                placeholder="Enter your passphrase"
                 value={passphrase}
-                onChange={(e) => setPassphrase(e.target.value)}
-                autoComplete="off"
-                data-1p-ignore="true"
-                data-lpignore="true"
-                data-form-type="other"
+                onChange={setPassphrase}
+                hasError={errorField === 'passphrase'}
               />
               {errorField === 'passphrase' && error && (
                 <p className="text-sm text-error" role="alert">

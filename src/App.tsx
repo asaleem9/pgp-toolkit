@@ -8,6 +8,7 @@ import { SignForm } from './components/SignForm';
 import { VerifyForm } from './components/VerifyForm';
 import { KeyInspector } from './components/KeyInspector';
 import { TrustBadge } from './components/TrustBadge';
+import { LiveAnnouncerProvider } from './components/LiveAnnouncer';
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('home');
@@ -31,6 +32,7 @@ function App() {
   }, []);
 
   return (
+    <LiveAnnouncerProvider>
     <div className="min-h-screen bg-gradient-mesh bg-gray-50 flex flex-col relative overflow-hidden">
       {/* Background: faint hex-fingerprint texture with soft corner glows */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
@@ -176,6 +178,7 @@ function App() {
         </div>
       </footer>
     </div>
+    </LiveAnnouncerProvider>
   );
 }
 

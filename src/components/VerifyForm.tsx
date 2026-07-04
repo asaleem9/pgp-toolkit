@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useVerify } from '../hooks/useVerify';
 import { KeyInput } from './KeyInput';
 import { DropZone } from './DropZone';
+import { useAnnounce } from '../hooks/useAnnounce';
 import { Button } from './ui/Button';
 import { Card } from './ui/Card';
 import { SectionHeading } from './ui/SectionHeading';
@@ -27,12 +28,20 @@ export function VerifyForm() {
     validateKey,
   } = useVerify();
 
+  const announce = useAnnounce();
+
   // Clear sensitive data when unmounting
   useEffect(() => {
     return () => {
       clearAll();
     };
   }, [clearAll]);
+
+  useEffect(() => {
+    if (result) {
+      announce(result.valid ? 'Verification complete: signature is valid' : 'Verification complete: signature is invalid');
+    }
+  }, [result, announce]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,9 +86,9 @@ export function VerifyForm() {
         </div>
 
         {/* Step 2: Signature Type */}
-        <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-          <p className="text-sm font-medium text-gray-700 mb-3">What are you verifying?</p>
-          <div className="space-y-2">
+        <fieldset className="mb-6 p-4 bg-gray-50 rounded-lg">
+          <legend className="float-left text-sm font-medium text-gray-700 mb-3 w-full">What are you verifying?</legend>
+          <div className="space-y-2 clear-left">
             <label className="flex items-start gap-3 cursor-pointer">
               <input
                 type="radio"
@@ -111,7 +120,7 @@ export function VerifyForm() {
               </div>
             </label>
           </div>
-        </div>
+        </fieldset>
 
         {/* Step 3 (detached only): Original Message */}
         {mode === 'detached' && (

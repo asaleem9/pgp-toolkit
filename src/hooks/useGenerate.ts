@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import * as openpgp from 'openpgp';
+import { isValidEmail } from '../utils/validation';
 
 export type KeyAlgorithm = 'ecc' | 'rsa';
 export type ECCCurve = 'curve25519' | 'p256' | 'p384' | 'p521';
@@ -86,9 +87,7 @@ export function useGenerate(): UseGenerateReturn {
       return;
     }
 
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!isValidEmail(email)) {
       setError('Please enter a valid email address');
       return;
     }

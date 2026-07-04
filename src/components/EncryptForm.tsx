@@ -3,6 +3,7 @@ import { useEncrypt, Recipient } from '../hooks/useEncrypt';
 import { KeyInput } from './KeyInput';
 import { MessageInput } from './MessageInput';
 import { OutputDisplay } from './OutputDisplay';
+import { useAnnounce } from '../hooks/useAnnounce';
 import { Button } from './ui/Button';
 import { Card } from './ui/Card';
 import { SectionHeading } from './ui/SectionHeading';
@@ -75,12 +76,20 @@ export function EncryptForm() {
     clearAll,
   } = useEncrypt();
 
+  const announce = useAnnounce();
+
   // Clear sensitive data when unmounting
   useEffect(() => {
     return () => {
       clearAll();
     };
   }, [clearAll]);
+
+  useEffect(() => {
+    if (encryptedOutput) {
+      announce('Message encrypted');
+    }
+  }, [encryptedOutput, announce]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

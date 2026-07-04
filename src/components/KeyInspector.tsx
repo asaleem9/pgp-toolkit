@@ -1,8 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useInspect } from '../hooks/useInspect';
 import { DropZone } from './DropZone';
 import { formatFingerprint, getExpiryStatus, getDaysUntilExpiry } from '../utils/pgp';
 import { useClipboard } from '../hooks/useClipboard';
+import { FileUploadButton } from './FileUploadButton';
+import { useAnnounce } from '../hooks/useAnnounce';
 import { Button } from './ui/Button';
 import { Card } from './ui/Card';
 import { SectionHeading } from './ui/SectionHeading';
@@ -21,12 +23,20 @@ export function KeyInspector() {
 
   const { copied: fingerprintCopied, copy: copyFingerprint } = useClipboard();
   const { copied: keyIdCopied, copy: copyKeyId } = useClipboard();
+  const announce = useAnnounce();
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   useEffect(() => {
     return () => {
       clearAll();
     };
   }, [clearAll]);
+
+  useEffect(() => {
+    if (keyInfo) {
+      announce('Key details ready');
+    }
+  }, [keyInfo, announce]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,14 +89,26 @@ export function KeyInspector() {
                 }`}
                 placeholder="-----BEGIN PGP PUBLIC KEY BLOCK-----&#10;or&#10;-----BEGIN PGP PRIVATE KEY BLOCK-----"
                 value={keyText}
-                onChange={(e) => setKeyText(e.target.value)}
+                onChange={(e) => {
+                  setUploadError(null);
+                  setKeyText(e.target.value);
+                }}
                 spellCheck={false}
               />
             </DropZone>
 
-            {error && (
+            <FileUploadButton
+              accept=".asc,.gpg,.key,.pgp,.txt"
+              onLoad={setKeyText}
+              onError={setUploadError}
+              ariaLabel="Upload key file"
+            >
+              Upload Key File
+            </FileUploadButton>
+
+            {(error || uploadError) && (
               <p className="text-sm text-error" role="alert">
-                {error}
+                {error || uploadError}
               </p>
             )}
           </div>
