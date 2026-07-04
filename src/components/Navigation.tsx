@@ -66,7 +66,7 @@ export function Navigation({ activeTab, onTabChange }: NavigationProps) {
                 <path d="M7 11V7a5 5 0 0 1 10 0v4" strokeWidth={2} />
               </svg>
             </div>
-            <span className="font-semibold text-lg text-primary tracking-tight">PGP Tool</span>
+            <span className="font-display font-bold text-lg text-primary tracking-tight">PGP Tool</span>
           </button>
 
           {/* Desktop: inline tabs + GitHub link */}

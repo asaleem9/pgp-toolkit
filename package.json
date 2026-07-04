@@ -21,6 +21,7 @@
     "clean-branches": "git branch --merged | grep -v '\\*\\|main' | xargs -n 1 git branch -d"
   },
   "dependencies": {
+    "@fontsource-variable/bricolage-grotesque": "^5.2.10",
     "@fontsource/dm-sans": "^5.2.8",
     "@fontsource/fira-code": "^5.2.7",
     "openpgp": "^6.3.0",

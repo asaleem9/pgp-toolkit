@@ -2,6 +2,11 @@ import { useEffect } from 'react';
 import { useVerify } from '../hooks/useVerify';
 import { KeyInput } from './KeyInput';
 import { DropZone } from './DropZone';
+import { useAnnounce } from '../hooks/useAnnounce';
+import { Button } from './ui/Button';
+import { Card } from './ui/Card';
+import { SectionHeading } from './ui/SectionHeading';
+import { StepBadge } from './ui/StepBadge';
 
 export function VerifyForm() {
   const {
@@ -23,12 +28,20 @@ export function VerifyForm() {
     validateKey,
   } = useVerify();
 
+  const announce = useAnnounce();
+
   // Clear sensitive data when unmounting
   useEffect(() => {
     return () => {
       clearAll();
     };
   }, [clearAll]);
+
+  useEffect(() => {
+    if (result) {
+      announce(result.valid ? 'Verification complete: signature is valid' : 'Verification complete: signature is invalid');
+    }
+  }, [result, announce]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,22 +66,12 @@ export function VerifyForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-soft border border-gray-200/50 p-6 hover:shadow-lg transition-shadow duration-300">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
-          <span className="w-1 h-6 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full" />
-          Verify a Signature
-        </h2>
+      <Card>
+        <SectionHeading>Verify a Signature</SectionHeading>
 
         {/* Step 1: Public Key */}
         <div className="mb-6">
-          <div className="flex items-center gap-3 mb-4">
-            <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 text-white text-sm font-semibold shadow-md">
-              1
-            </span>
-            <span className="text-sm font-semibold text-gray-900">
-              Enter Signer's Public Key
-            </span>
-          </div>
+          <StepBadge step="1">Enter Signer's Public Key</StepBadge>
           <KeyInput
             id="verify-public-key"
             label=""
@@ -83,9 +86,9 @@ export function VerifyForm() {
         </div>
 
         {/* Step 2: Signature Type */}
-        <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-          <p className="text-sm font-medium text-gray-700 mb-3">What are you verifying?</p>
-          <div className="space-y-2">
+        <fieldset className="mb-6 p-4 bg-gray-50 rounded-lg">
+          <legend className="float-left text-sm font-medium text-gray-700 mb-3 w-full">What are you verifying?</legend>
+          <div className="space-y-2 clear-left">
             <label className="flex items-start gap-3 cursor-pointer">
               <input
                 type="radio"
@@ -117,17 +120,12 @@ export function VerifyForm() {
               </div>
             </label>
           </div>
-        </div>
+        </fieldset>
 
         {/* Step 3 (detached only): Original Message */}
         {mode === 'detached' && (
           <div className="mb-6">
-            <div className="flex items-center gap-3 mb-4">
-              <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 text-white text-sm font-semibold shadow-md">
-                3
-              </span>
-              <span className="text-sm font-semibold text-gray-900">Paste Original Message</span>
-            </div>
+            <StepBadge step="3">Paste Original Message</StepBadge>
             <DropZone onDrop={setOriginalMessage} hint="Drop original message file">
               <textarea
                 id="original-message-input"
@@ -152,14 +150,9 @@ export function VerifyForm() {
 
         {/* Signed Message / Signature */}
         <div className="mb-6">
-          <div className="flex items-center gap-3 mb-4">
-            <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 text-white text-sm font-semibold shadow-md">
-              {mode === 'detached' ? 4 : 3}
-            </span>
-            <span className="text-sm font-semibold text-gray-900">
-              {mode === 'detached' ? 'Paste Signature' : 'Paste Signed Message'}
-            </span>
-          </div>
+          <StepBadge step={mode === 'detached' ? '4' : '3'}>
+            {mode === 'detached' ? 'Paste Signature' : 'Paste Signed Message'}
+          </StepBadge>
           <DropZone
             onDrop={setSignedMessage}
             hint={mode === 'detached' ? 'Drop signature file' : 'Drop signed message file'}
@@ -198,61 +191,25 @@ export function VerifyForm() {
         )}
 
         {/* Verify button */}
-        <button
+        <Button
           type="submit"
           disabled={isLoading || !publicKey.trim() || !signedMessage.trim()}
-          className="w-full py-3 px-4 bg-gradient-to-r from-primary-600 to-primary-700 text-white font-semibold rounded-xl hover:from-primary-700 hover:to-primary-800 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+          loading={isLoading}
+          loadingText="Verifying..."
+          icon={
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+          }
         >
-          {isLoading ? (
-            <span className="flex items-center justify-center gap-2">
-              <svg
-                className="animate-spin w-5 h-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                />
-              </svg>
-              Verifying...
-            </span>
-          ) : (
-            <span className="flex items-center justify-center gap-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
-              Verify Signature
-            </span>
-          )}
-        </button>
-      </div>
+          Verify Signature
+        </Button>
+      </Card>
 
       {/* Verification Result */}
       {result && (
-        <div className={`backdrop-blur-sm rounded-2xl shadow-soft p-6 animate-slide-up ${result.valid ? 'bg-gradient-to-br from-success/5 to-success/10 border border-success/20' : 'bg-gradient-to-br from-error/5 to-error/10 border border-error/20'}`}>
-          <div className="flex items-center gap-3 mb-4">
-            <span className={`flex items-center justify-center w-8 h-8 rounded-xl text-white text-sm font-semibold shadow-md ${result.valid ? 'bg-gradient-to-br from-success to-success/90' : 'bg-gradient-to-br from-error to-error/90'}`}>
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                {result.valid ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                )}
-              </svg>
-            </span>
-            <span className="text-sm font-semibold text-gray-900">Verification Result</span>
-          </div>
+        <Card tone={result.valid ? 'success' : 'error'} className="animate-rise">
+          <StepBadge tone={result.valid ? 'success' : 'error'}>Verification Result</StepBadge>
 
           {result.valid ? (
             <div className="space-y-4">
@@ -342,14 +299,10 @@ export function VerifyForm() {
             </div>
           )}
 
-          <button
-            type="button"
-            onClick={clearAll}
-            className="mt-4 text-sm text-secondary hover:text-primary transition-colors"
-          >
+          <Button variant="ghost" onClick={clearAll} className="mt-4">
             Clear All & Verify Another
-          </button>
-        </div>
+          </Button>
+        </Card>
       )}
     </form>
   );

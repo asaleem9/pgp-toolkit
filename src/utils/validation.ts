@@ -97,3 +97,7 @@ export function validatePlaintext(message: string): ValidationResult {
 
   return validateMessageSize(message);
 }
+
+export function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}

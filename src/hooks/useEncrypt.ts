@@ -329,8 +329,12 @@ export function useEncrypt(): UseEncryptReturn {
   }, [state.recipients, state.message, state.encryptToSelf, state.selfKey]);
 
   const clearAll = useCallback(() => {
-    setState({
-      recipients: [createRecipient()],
+    setState(prev => ({
+      // Keep the first recipient's id so its keyed input isn't remounted.
+      // StrictMode runs the unmount cleanup right after mount; regenerating
+      // the id there swaps the textarea mid-interaction and drops in-flight
+      // input events.
+      recipients: [{ ...createRecipient(), id: prev.recipients[0]?.id ?? createRecipient().id }],
       message: '',
       encryptedOutput: '',
       error: null,
@@ -340,7 +344,7 @@ export function useEncrypt(): UseEncryptReturn {
       selfKey: '',
       selfKeyInfo: null,
       selfKeyError: null,
-    });
+    }));
   }, []);
 
   return {

@@ -1,6 +1,7 @@
-import { useCallback, useRef, useState } from 'react';
+import { useState } from 'react';
 import { DropZone } from './DropZone';
-import { MAX_MESSAGE_SIZE } from '../utils/validation';
+import { FileUploadButton } from './FileUploadButton';
+import { UploadIcon } from './ui/icons';
 
 interface MessageInputProps {
   label: string;
@@ -25,46 +26,30 @@ export function MessageInput({
   allowFileUpload = false,
   fileAccept = '.asc,.gpg,.txt',
 }: MessageInputProps) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
-  const handleFileUpload = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      const file = event.target.files?.[0];
-
-      // Reset file input so selecting the same file again re-triggers change
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-
-      if (!file) return;
-
-      if (file.size > MAX_MESSAGE_SIZE) {
-        setUploadError(
-          `File is too large (${(file.size / 1024 / 1024).toFixed(2)}MB). Maximum size is 1MB.`
-        );
-        return;
-      }
-
-      setUploadError(null);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const content = e.target?.result as string;
-        onChange(content);
-      };
-      reader.onerror = () => {
-        setUploadError('Could not read the selected file.');
-      };
-      reader.readAsText(file);
-    },
-    [onChange]
-  );
-
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
-  };
-
   const displayError = error ?? uploadError;
+
+  const textarea = (
+    <textarea
+      id={id}
+      className={`w-full px-4 py-3 text-sm border rounded-xl resize-none focus:outline-none focus:ring-2 transition-all duration-200 ${
+        displayError
+          ? 'border-error/50 focus:ring-error/20 focus:border-error bg-error/5'
+          : 'border-gray-300 focus:ring-primary/20 focus:border-primary bg-white hover:border-gray-400'
+      }`}
+      placeholder={placeholder}
+      value={value}
+      onChange={(e) => {
+        setUploadError(null);
+        onChange(e.target.value);
+      }}
+      rows={rows}
+      spellCheck={false}
+      aria-invalid={!!displayError}
+      aria-describedby={displayError ? `${id}-error` : undefined}
+    />
+  );
 
   return (
     <div className="space-y-2">
@@ -74,79 +59,23 @@ export function MessageInput({
 
       {allowFileUpload ? (
         <DropZone onDrop={onChange} hint="Drop file here">
-          <textarea
-            id={id}
-            className={`w-full px-4 py-3 text-sm border rounded-xl resize-none focus:outline-none focus:ring-2 transition-all duration-200 ${
-              displayError
-                ? 'border-error/50 focus:ring-error/20 focus:border-error bg-error/5'
-                : 'border-gray-300 focus:ring-primary/20 focus:border-primary bg-white hover:border-gray-400'
-            }`}
-            placeholder={placeholder}
-            value={value}
-            onChange={(e) => {
-              setUploadError(null);
-              onChange(e.target.value);
-            }}
-            rows={rows}
-            spellCheck={false}
-            aria-invalid={!!displayError}
-            aria-describedby={displayError ? `${id}-error` : undefined}
-          />
+          {textarea}
         </DropZone>
       ) : (
-        <textarea
-          id={id}
-          className={`w-full px-4 py-3 text-sm border rounded-xl resize-none focus:outline-none focus:ring-2 transition-all duration-200 ${
-            displayError
-              ? 'border-error/50 focus:ring-error/20 focus:border-error bg-error/5'
-              : 'border-gray-300 focus:ring-primary/20 focus:border-primary bg-white hover:border-gray-400'
-          }`}
-          placeholder={placeholder}
-          value={value}
-          onChange={(e) => {
-            setUploadError(null);
-            onChange(e.target.value);
-          }}
-          rows={rows}
-          spellCheck={false}
-          aria-invalid={!!displayError}
-          aria-describedby={displayError ? `${id}-error` : undefined}
-        />
+        textarea
       )}
 
       {/* File upload button */}
       {allowFileUpload && (
-        <div className="flex items-center gap-2">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept={fileAccept}
-            onChange={handleFileUpload}
-            className="hidden"
-            aria-label="Upload file"
-          />
-          <button
-            type="button"
-            onClick={handleUploadClick}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-secondary hover:text-primary border border-gray-300 rounded-md hover:border-primary transition-colors"
-          >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
-              />
-            </svg>
-            Upload .asc File
-          </button>
-        </div>
+        <FileUploadButton
+          accept={fileAccept}
+          onLoad={onChange}
+          onError={setUploadError}
+          ariaLabel="Upload file"
+          icon={<UploadIcon className="w-4 h-4" />}
+        >
+          Upload .asc File
+        </FileUploadButton>
       )}
 
       {/* Error message */}

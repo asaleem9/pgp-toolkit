@@ -1,8 +1,14 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useInspect } from '../hooks/useInspect';
 import { DropZone } from './DropZone';
 import { formatFingerprint, getExpiryStatus, getDaysUntilExpiry } from '../utils/pgp';
 import { useClipboard } from '../hooks/useClipboard';
+import { FileUploadButton } from './FileUploadButton';
+import { useAnnounce } from '../hooks/useAnnounce';
+import { Button } from './ui/Button';
+import { Card } from './ui/Card';
+import { SectionHeading } from './ui/SectionHeading';
+import { CheckIcon, CopyIcon, WarningIcon } from './ui/icons';
 
 export function KeyInspector() {
   const {
@@ -17,12 +23,20 @@ export function KeyInspector() {
 
   const { copied: fingerprintCopied, copy: copyFingerprint } = useClipboard();
   const { copied: keyIdCopied, copy: copyKeyId } = useClipboard();
+  const announce = useAnnounce();
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   useEffect(() => {
     return () => {
       clearAll();
     };
   }, [clearAll]);
+
+  useEffect(() => {
+    if (keyInfo) {
+      announce('Key details ready');
+    }
+  }, [keyInfo, announce]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,11 +72,8 @@ export function KeyInspector() {
   return (
     <div className="space-y-6">
       <form onSubmit={handleSubmit}>
-        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-soft border border-gray-200/50 p-6 hover:shadow-lg transition-shadow duration-300">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2 flex items-center gap-2">
-            <span className="w-1 h-6 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full" />
-            Key Inspector
-          </h2>
+        <Card>
+          <SectionHeading className="mb-2">Key Inspector</SectionHeading>
           <p className="text-sm text-secondary mb-6">
             Paste any PGP key (public or private) to view its detailed information.
           </p>
@@ -78,45 +89,49 @@ export function KeyInspector() {
                 }`}
                 placeholder="-----BEGIN PGP PUBLIC KEY BLOCK-----&#10;or&#10;-----BEGIN PGP PRIVATE KEY BLOCK-----"
                 value={keyText}
-                onChange={(e) => setKeyText(e.target.value)}
+                onChange={(e) => {
+                  setUploadError(null);
+                  setKeyText(e.target.value);
+                }}
                 spellCheck={false}
               />
             </DropZone>
 
-            {error && (
+            <FileUploadButton
+              accept=".asc,.gpg,.key,.pgp,.txt"
+              onLoad={setKeyText}
+              onError={setUploadError}
+              ariaLabel="Upload key file"
+            >
+              Upload Key File
+            </FileUploadButton>
+
+            {(error || uploadError) && (
               <p className="text-sm text-error" role="alert">
-                {error}
+                {error || uploadError}
               </p>
             )}
           </div>
 
-          <button
+          <Button
             type="submit"
             disabled={isLoading || !keyText.trim()}
-            className="mt-4 w-full py-3 px-4 bg-gradient-to-r from-primary-600 to-primary-700 text-white font-semibold rounded-xl hover:from-primary-700 hover:to-primary-800 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+            loading={isLoading}
+            loadingText="Inspecting..."
+            className="mt-4"
+            icon={
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            }
           >
-            {isLoading ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                </svg>
-                Inspecting...
-              </span>
-            ) : (
-              <span className="flex items-center justify-center gap-2">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                Inspect Key
-              </span>
-            )}
-          </button>
-        </div>
+            Inspect Key
+          </Button>
+        </Card>
       </form>
 
       {keyInfo && (
-        <div className="bg-gradient-to-br from-primary/5 to-primary/10 backdrop-blur-sm rounded-2xl shadow-soft border border-primary/20 p-6 animate-slide-up">
+        <Card tone="info" className="animate-rise">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 text-white text-sm font-semibold shadow-md">
@@ -163,13 +178,11 @@ export function KeyInspector() {
                     title="Copy Key ID"
                   >
                     {keyIdCopied ? (
-                      <svg className="w-4 h-4 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
+                      <span className="inline-flex animate-pop text-success">
+                        <CheckIcon />
+                      </span>
                     ) : (
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      </svg>
+                      <CopyIcon />
                     )}
                   </button>
                 </dd>
@@ -206,13 +219,11 @@ export function KeyInspector() {
                   title="Copy Fingerprint"
                 >
                   {fingerprintCopied ? (
-                    <svg className="w-4 h-4 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
+                    <span className="inline-flex animate-pop text-success">
+                      <CheckIcon />
+                    </span>
                   ) : (
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                    </svg>
+                    <CopyIcon />
                   )}
                 </button>
               </dd>
@@ -327,9 +338,7 @@ export function KeyInspector() {
             {keyInfo.type === 'private' && (
               <div className="mt-4 p-3 bg-warning/10 border border-warning/30 rounded-lg">
                 <div className="flex items-start gap-2 text-warning">
-                  <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
+                  <WarningIcon className="w-5 h-5 flex-shrink-0" />
                   <div className="text-sm">
                     <p className="font-medium">This is a private key</p>
                     <p className="mt-0.5 text-warning/80">
@@ -343,14 +352,10 @@ export function KeyInspector() {
             )}
           </div>
 
-          <button
-            type="button"
-            onClick={clearAll}
-            className="mt-6 text-sm text-secondary hover:text-primary transition-colors"
-          >
+          <Button variant="ghost" onClick={clearAll} className="mt-6">
             Clear & Inspect Another Key
-          </button>
-        </div>
+          </Button>
+        </Card>
       )}
     </div>
   );

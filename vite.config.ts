@@ -6,7 +6,7 @@ import react from '@vitejs/plugin-react'
 // block the HMR websocket in dev. frame-ancestors is omitted because browsers
 // ignore it in meta tags (the vercel.json header still covers it).
 const CSP =
-  "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'none'; img-src 'self' data:; form-action 'none'; base-uri 'self'"
+  "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'none'; img-src 'self' data:; form-action 'none'; base-uri 'self'"
 
 function injectCspMeta(): Plugin {
   return {
@@ -28,6 +28,9 @@ export default defineConfig({
   plugins: [react(), injectCspMeta()],
   build: {
     sourcemap: false,
+    // Never inline assets as data: URIs — the CSP only allows fonts from 'self',
+    // and inlined woff2 subsets were getting blocked in production.
+    assetsInlineLimit: 0,
     rollupOptions: {
       output: {
         manualChunks: {

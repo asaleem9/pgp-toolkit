@@ -8,17 +8,18 @@ export default {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#1a365d',
+          DEFAULT: '#3538cd',
           50: '#f0f5ff',
           100: '#e0eaff',
           200: '#c7d7fe',
-          300: '#a4bcfc',
+          300: '#a4bcfd',
           400: '#8098f9',
           500: '#6172f3',
           600: '#444ce7',
           700: '#3538cd',
-          800: '#1a365d',
-          900: '#0f1d35',
+          800: '#2d31a6',
+          900: '#2d3282',
+          950: '#1f235f',
         },
         secondary: '#64748b',
         success: '#16a34a',
@@ -31,48 +32,46 @@ export default {
         },
       },
       fontFamily: {
+        display: ['Bricolage Grotesque Variable', 'DM Sans', 'system-ui', 'sans-serif'],
         sans: ['DM Sans', 'system-ui', '-apple-system', 'sans-serif'],
         mono: ['Fira Code', 'JetBrains Mono', 'Consolas', 'monospace'],
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+        // Faint tile of hex-fingerprint glyphs, drawn as an inline SVG so the
+        // whole texture ships with the CSS (img-src data: is allowed by the CSP)
+        'cipher-tile': `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cg font-family='Fira Code,monospace' font-size='11' fill='%232d3282'%3E%3Ctext x='16' y='40'%3E9C4F%3C/text%3E%3Ctext x='150' y='96'%3E22A7%3C/text%3E%3Ctext x='64' y='160'%3ED3E1%3C/text%3E%3Ctext x='188' y='224'%3E41F0%3C/text%3E%3C/g%3E%3C/svg%3E")`,
         'gradient-mesh': 'radial-gradient(at 27% 37%, hsla(215, 98%, 61%, 0.15) 0px, transparent 50%), radial-gradient(at 97% 21%, hsla(125, 98%, 72%, 0.08) 0px, transparent 50%), radial-gradient(at 52% 99%, hsla(354, 98%, 61%, 0.08) 0px, transparent 50%), radial-gradient(at 10% 29%, hsla(256, 96%, 67%, 0.1) 0px, transparent 50%), radial-gradient(at 97% 96%, hsla(38, 60%, 74%, 0.08) 0px, transparent 50%), radial-gradient(at 33% 50%, hsla(222, 67%, 73%, 0.12) 0px, transparent 50%), radial-gradient(at 79% 53%, hsla(343, 68%, 79%, 0.08) 0px, transparent 50%)',
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-in-out',
-        'slide-up': 'slideUp 0.4s ease-out',
-        'shimmer': 'shimmer 2s linear infinite',
-        'glow': 'glow 2s ease-in-out infinite',
-        'blob': 'blob 7s infinite',
+        'rise': 'rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both',
+        'pop': 'pop 0.3s ease-out',
+        'sweep': 'sweep 0.9s ease-out 0.1s 1 both',
       },
       keyframes: {
         fadeIn: {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },
         },
-        slideUp: {
-          '0%': { transform: 'translateY(10px)', opacity: '0' },
-          '100%': { transform: 'translateY(0)', opacity: '1' },
+        rise: {
+          '0%': { opacity: '0', transform: 'translateY(14px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
         },
-        shimmer: {
-          '0%': { backgroundPosition: '-1000px 0' },
-          '100%': { backgroundPosition: '1000px 0' },
+        pop: {
+          '0%': { transform: 'scale(0.8)' },
+          '55%': { transform: 'scale(1.12)' },
+          '100%': { transform: 'scale(1)' },
         },
-        glow: {
-          '0%, 100%': { boxShadow: '0 0 20px rgba(59, 130, 246, 0.3)' },
-          '50%': { boxShadow: '0 0 30px rgba(59, 130, 246, 0.5)' },
-        },
-        blob: {
-          '0%': { transform: 'translate(0px, 0px) scale(1)' },
-          '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
-          '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
-          '100%': { transform: 'translate(0px, 0px) scale(1)' },
+        sweep: {
+          '0%': { transform: 'translateX(-120%)' },
+          '100%': { transform: 'translateX(320%)' },
         },
       },
       boxShadow: {
         'soft': '0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)',
-        'glow': '0 0 20px rgba(59, 130, 246, 0.3)',
-        'glow-lg': '0 0 30px rgba(59, 130, 246, 0.4)',
+        'glow': '0 0 20px rgba(68, 76, 231, 0.25)',
+        'glow-lg': '0 0 30px rgba(68, 76, 231, 0.35)',
       },
     },
   },
