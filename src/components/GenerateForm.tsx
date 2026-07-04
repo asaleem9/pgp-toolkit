@@ -3,6 +3,11 @@ import { useGenerate, ECCCurve, RSABits } from '../hooks/useGenerate';
 import { OutputDisplay } from './OutputDisplay';
 import { formatFingerprint } from '../utils/pgp';
 import { TrustBadge } from './TrustBadge';
+import { Button } from './ui/Button';
+import { Card } from './ui/Card';
+import { SectionHeading } from './ui/SectionHeading';
+import { StepBadge } from './ui/StepBadge';
+import { WarningIcon, XIcon } from './ui/icons';
 
 export function GenerateForm() {
   const {
@@ -57,23 +62,15 @@ export function GenerateForm() {
             : 'w-full max-w-2xl'
         }`}>
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-soft border border-gray-200/50 p-6 hover:shadow-lg transition-shadow duration-300">
-              <h2 className="font-display text-xl font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                <span className="w-1 h-6 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full" />
-                Generate PGP Key Pair
-              </h2>
+            <Card>
+              <SectionHeading className="mb-2">Generate PGP Key Pair</SectionHeading>
               <p className="text-sm text-secondary mb-6">
                 Create a new public/private key pair for encrypting, decrypting, and signing messages.
               </p>
 
               {/* Step 1: Identity */}
               <div className="mb-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 text-white text-sm font-semibold shadow-md">
-                    1
-                  </span>
-                  <span className="text-sm font-semibold text-gray-900">Your Identity</span>
-                </div>
+                <StepBadge step="1">Your Identity</StepBadge>
                 <div className="space-y-4">
                   <div>
                     <label htmlFor="gen-name" className="block text-sm font-medium text-gray-700 mb-1">
@@ -106,13 +103,7 @@ export function GenerateForm() {
 
               {/* Step 2: Passphrase */}
               <div className="mb-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 text-white text-sm font-semibold shadow-md">
-                    2
-                  </span>
-                  <span className="text-sm font-semibold text-gray-900">Passphrase Protection</span>
-                  <span className="text-xs text-secondary">(Recommended)</span>
-                </div>
+                <StepBadge step="2" hint="(Recommended)">Passphrase Protection</StepBadge>
                 <div className="space-y-4">
                   <div>
                     <label htmlFor="gen-passphrase" className="block text-sm font-medium text-gray-700 mb-1">
@@ -274,29 +265,20 @@ export function GenerateForm() {
               )}
 
               {/* Generate button */}
-              <button
+              <Button
                 type="submit"
                 disabled={isLoading || !name.trim() || !email.trim()}
-                className="w-full py-3 px-4 bg-gradient-to-r from-primary-600 to-primary-700 text-white font-semibold rounded-xl hover:from-primary-700 hover:to-primary-800 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                loading={isLoading}
+                loadingText="Generating Keys..."
+                icon={
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                  </svg>
+                }
               >
-                {isLoading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    Generating Keys...
-                  </span>
-                ) : (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                    </svg>
-                    Generate Key Pair
-                  </span>
-                )}
-              </button>
-            </div>
+                Generate Key Pair
+              </Button>
+            </Card>
 
             {/* Trust Badge - only show when no keys generated */}
             {!generatedKeys && <TrustBadge className="mt-8" />}
@@ -310,25 +292,16 @@ export function GenerateForm() {
             : 'w-0 max-w-0 opacity-0 translate-x-8'
         }`}>
           {generatedKeys && (
-            <div className="bg-gradient-to-br from-success/5 to-success/10 backdrop-blur-sm rounded-2xl shadow-soft border border-success/20 p-6 h-fit animate-fade-in">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-success to-success/90 text-white text-sm font-semibold shadow-md">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </span>
-                  <span className="text-sm font-semibold text-gray-900">Your New Key Pair</span>
-                </div>
+            <Card tone="success" className="h-fit animate-rise">
+              <div className="flex items-start justify-between">
+                <StepBadge tone="success">Your New Key Pair</StepBadge>
                 <button
                   type="button"
                   onClick={clearAll}
                   className="p-2 text-secondary hover:text-error hover:bg-error/10 rounded-lg transition-colors"
                   title="Clear and start over"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <XIcon />
                 </button>
               </div>
 
@@ -400,9 +373,7 @@ export function GenerateForm() {
                 <div>
                   <div className="mb-3 p-3 bg-warning/10 border border-warning/30 rounded-lg">
                     <div className="flex items-start gap-2 text-warning">
-                      <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                      </svg>
+                      <WarningIcon className="w-5 h-5 flex-shrink-0" />
                       <div className="text-sm">
                         <p className="font-medium">Keep this key private!</p>
                         <p className="mt-0.5 text-warning/80">
@@ -429,7 +400,7 @@ export function GenerateForm() {
               >
                 Generate Another Key Pair
               </button>
-            </div>
+            </Card>
           )}
         </div>
       </div>

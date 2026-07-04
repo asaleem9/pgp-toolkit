@@ -3,6 +3,8 @@ import { KeyInfo, formatFingerprint, getExpiryStatus } from '../utils/pgp';
 import { MAX_MESSAGE_SIZE } from '../utils/validation';
 import { KeyExpiryWarning } from './KeyExpiryWarning';
 import { DropZone } from './DropZone';
+import { Button } from './ui/Button';
+import { UploadIcon } from './ui/icons';
 
 interface KeyInputProps {
   label: string;
@@ -105,27 +107,13 @@ export function KeyInput({
           className="hidden"
           aria-label={`Upload ${keyType} key file`}
         />
-        <button
-          type="button"
+        <Button
+          variant="outline"
           onClick={handleUploadClick}
-          className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-secondary hover:text-primary border border-gray-300 rounded-lg hover:border-primary hover:bg-gray-50 transition-all duration-200 group"
+          icon={<UploadIcon className="w-4 h-4 group-hover:-translate-y-0.5 transition-transform" />}
         >
-          <svg
-            className="w-4 h-4 group-hover:-translate-y-0.5 transition-transform"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
-            />
-          </svg>
           Upload Key File
-        </button>
+        </Button>
       </div>
 
       {/* Error message */}
