@@ -116,7 +116,7 @@ export function KeyInspector() {
       </form>
 
       {keyInfo && (
-        <div className="bg-gradient-to-br from-primary/5 to-primary/10 backdrop-blur-sm rounded-2xl shadow-soft border border-primary/20 p-6 animate-slide-up">
+        <div className="bg-gradient-to-br from-primary/5 to-primary/10 backdrop-blur-sm rounded-2xl shadow-soft border border-primary/20 p-6 animate-rise">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 text-white text-sm font-semibold shadow-md">

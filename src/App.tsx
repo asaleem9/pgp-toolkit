@@ -32,11 +32,11 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gradient-mesh bg-gray-50 flex flex-col relative overflow-hidden">
-      {/* Animated gradient orbs in background */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 -left-4 w-96 h-96 bg-primary-200/30 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob" />
-        <div className="absolute top-0 -right-4 w-96 h-96 bg-accent-purple/20 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-2000" />
-        <div className="absolute -bottom-8 left-20 w-96 h-96 bg-accent-cyan/20 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-4000" />
+      {/* Background: faint hex-fingerprint texture with soft corner glows */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+        <div className="absolute inset-0 bg-cipher-tile opacity-[0.05] [mask-image:radial-gradient(ellipse_at_top,black_20%,transparent_75%)]" />
+        <div className="absolute -top-32 -left-24 w-[28rem] h-[28rem] bg-primary-200/40 rounded-full blur-3xl" />
+        <div className="absolute -bottom-24 -right-16 w-[26rem] h-[26rem] bg-accent-purple/15 rounded-full blur-3xl" />
       </div>
 
       <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
@@ -51,20 +51,26 @@ function App() {
           role="tabpanel"
           aria-labelledby="generate-tab"
           hidden={activeTab !== 'generate'}
-          className="animate-fade-in"
         >
-          {activeTab === 'generate' && <GenerateForm />}
+          {activeTab === 'generate' && (
+            <div className="animate-rise">
+              <GenerateForm />
+            </div>
+          )}
         </div>
 
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in" hidden={activeTab === 'generate' || activeTab === 'home'}>
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8" hidden={activeTab === 'generate' || activeTab === 'home'}>
           <div
             id="encrypt-panel"
             role="tabpanel"
             aria-labelledby="encrypt-tab"
             hidden={activeTab !== 'encrypt'}
-            className="animate-slide-up"
           >
-            {activeTab === 'encrypt' && <EncryptForm />}
+            {activeTab === 'encrypt' && (
+              <div className="animate-rise">
+                <EncryptForm />
+              </div>
+            )}
           </div>
 
           <div
@@ -72,9 +78,12 @@ function App() {
             role="tabpanel"
             aria-labelledby="decrypt-tab"
             hidden={activeTab !== 'decrypt'}
-            className="animate-slide-up"
           >
-            {activeTab === 'decrypt' && <DecryptForm />}
+            {activeTab === 'decrypt' && (
+              <div className="animate-rise">
+                <DecryptForm />
+              </div>
+            )}
           </div>
 
           <div
@@ -82,9 +91,12 @@ function App() {
             role="tabpanel"
             aria-labelledby="sign-tab"
             hidden={activeTab !== 'sign'}
-            className="animate-slide-up"
           >
-            {activeTab === 'sign' && <SignForm />}
+            {activeTab === 'sign' && (
+              <div className="animate-rise">
+                <SignForm />
+              </div>
+            )}
           </div>
 
           <div
@@ -92,9 +104,12 @@ function App() {
             role="tabpanel"
             aria-labelledby="verify-tab"
             hidden={activeTab !== 'verify'}
-            className="animate-slide-up"
           >
-            {activeTab === 'verify' && <VerifyForm />}
+            {activeTab === 'verify' && (
+              <div className="animate-rise">
+                <VerifyForm />
+              </div>
+            )}
           </div>
 
           <div
@@ -102,9 +117,12 @@ function App() {
             role="tabpanel"
             aria-labelledby="inspect-tab"
             hidden={activeTab !== 'inspect'}
-            className="animate-slide-up"
           >
-            {activeTab === 'inspect' && <KeyInspector />}
+            {activeTab === 'inspect' && (
+              <div className="animate-rise">
+                <KeyInspector />
+              </div>
+            )}
           </div>
 
           {/* Trust Badge */}

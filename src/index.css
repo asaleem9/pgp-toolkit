@@ -59,19 +59,29 @@
     display: none;
   }
 
-  /* Animation delay utilities */
-  .animation-delay-2000 {
-    animation-delay: 2s;
-  }
-
-  .animation-delay-4000 {
-    animation-delay: 4s;
-  }
+  /* Entrance stagger — pairs with animate-rise (fill-mode: both keeps
+     elements hidden until their delay elapses) */
+  .stagger-1 { animation-delay: 70ms; }
+  .stagger-2 { animation-delay: 140ms; }
+  .stagger-3 { animation-delay: 210ms; }
+  .stagger-4 { animation-delay: 280ms; }
+  .stagger-5 { animation-delay: 350ms; }
+  .stagger-6 { animation-delay: 420ms; }
 
   /* Glass morphism effect */
   .glass {
     background: rgba(255, 255, 255, 0.7);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

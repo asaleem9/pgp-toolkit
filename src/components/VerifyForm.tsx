@@ -240,7 +240,7 @@ export function VerifyForm() {
 
       {/* Verification Result */}
       {result && (
-        <div className={`backdrop-blur-sm rounded-2xl shadow-soft p-6 animate-slide-up ${result.valid ? 'bg-gradient-to-br from-success/5 to-success/10 border border-success/20' : 'bg-gradient-to-br from-error/5 to-error/10 border border-error/20'}`}>
+        <div className={`backdrop-blur-sm rounded-2xl shadow-soft p-6 animate-rise ${result.valid ? 'bg-gradient-to-br from-success/5 to-success/10 border border-success/20' : 'bg-gradient-to-br from-error/5 to-error/10 border border-error/20'}`}>
           <div className="flex items-center gap-3 mb-4">
             <span className={`flex items-center justify-center w-8 h-8 rounded-xl text-white text-sm font-semibold shadow-md ${result.valid ? 'bg-gradient-to-br from-success to-success/90' : 'bg-gradient-to-br from-error to-error/90'}`}>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
