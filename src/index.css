@@ -59,15 +59,6 @@
     display: none;
   }
 
-  /* Entrance stagger — pairs with animate-rise (fill-mode: both keeps
-     elements hidden until their delay elapses) */
-  .stagger-1 { animation-delay: 70ms; }
-  .stagger-2 { animation-delay: 140ms; }
-  .stagger-3 { animation-delay: 210ms; }
-  .stagger-4 { animation-delay: 280ms; }
-  .stagger-5 { animation-delay: 350ms; }
-  .stagger-6 { animation-delay: 420ms; }
-
   /* Glass morphism effect */
   .glass {
     background: rgba(255, 255, 255, 0.7);
@@ -75,6 +66,17 @@
     -webkit-backdrop-filter: blur(10px);
   }
 }
+
+/* Entrance stagger — pairs with animate-rise (fill-mode: both keeps elements
+   hidden until their delay elapses). Deliberately outside @layer utilities:
+   some call sites build the class name dynamically, which Tailwind's content
+   scan can't see. */
+.stagger-1 { animation-delay: 70ms; }
+.stagger-2 { animation-delay: 140ms; }
+.stagger-3 { animation-delay: 210ms; }
+.stagger-4 { animation-delay: 280ms; }
+.stagger-5 { animation-delay: 350ms; }
+.stagger-6 { animation-delay: 420ms; }
 
 @media (prefers-reduced-motion: reduce) {
   *,

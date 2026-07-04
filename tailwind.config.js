@@ -40,7 +40,7 @@ export default {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         // Faint tile of hex-fingerprint glyphs, drawn as an inline SVG so the
         // whole texture ships with the CSS (img-src data: is allowed by the CSP)
-        'cipher-tile': `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cg font-family='Fira Code,monospace' font-size='11' fill='%232d3282'%3E%3Ctext x='8' y='24'%3E9C4F%3C/text%3E%3Ctext x='78' y='24'%3E22A7%3C/text%3E%3Ctext x='42' y='66'%3ED3E1%3C/text%3E%3Ctext x='8' y='108'%3E41F0%3C/text%3E%3Ctext x='78' y='108'%3E08BC%3C/text%3E%3C/g%3E%3C/svg%3E")`,
+        'cipher-tile': `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cg font-family='Fira Code,monospace' font-size='11' fill='%232d3282'%3E%3Ctext x='16' y='40'%3E9C4F%3C/text%3E%3Ctext x='150' y='96'%3E22A7%3C/text%3E%3Ctext x='64' y='160'%3ED3E1%3C/text%3E%3Ctext x='188' y='224'%3E41F0%3C/text%3E%3C/g%3E%3C/svg%3E")`,
         'gradient-mesh': 'radial-gradient(at 27% 37%, hsla(215, 98%, 61%, 0.15) 0px, transparent 50%), radial-gradient(at 97% 21%, hsla(125, 98%, 72%, 0.08) 0px, transparent 50%), radial-gradient(at 52% 99%, hsla(354, 98%, 61%, 0.08) 0px, transparent 50%), radial-gradient(at 10% 29%, hsla(256, 96%, 67%, 0.1) 0px, transparent 50%), radial-gradient(at 97% 96%, hsla(38, 60%, 74%, 0.08) 0px, transparent 50%), radial-gradient(at 33% 50%, hsla(222, 67%, 73%, 0.12) 0px, transparent 50%), radial-gradient(at 79% 53%, hsla(343, 68%, 79%, 0.08) 0px, transparent 50%)',
       },
       animation: {

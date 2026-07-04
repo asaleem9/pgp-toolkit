@@ -34,7 +34,7 @@ function App() {
     <div className="min-h-screen bg-gradient-mesh bg-gray-50 flex flex-col relative overflow-hidden">
       {/* Background: faint hex-fingerprint texture with soft corner glows */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-        <div className="absolute inset-0 bg-cipher-tile opacity-[0.05] [mask-image:radial-gradient(ellipse_at_top,black_20%,transparent_75%)]" />
+        <div className="absolute inset-0 bg-cipher-tile opacity-[0.035] [mask-image:radial-gradient(ellipse_at_top,black_20%,transparent_70%)]" />
         <div className="absolute -top-32 -left-24 w-[28rem] h-[28rem] bg-primary-200/40 rounded-full blur-3xl" />
         <div className="absolute -bottom-24 -right-16 w-[26rem] h-[26rem] bg-accent-purple/15 rounded-full blur-3xl" />
       </div>
